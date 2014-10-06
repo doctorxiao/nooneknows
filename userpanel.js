@@ -2,7 +2,7 @@ var express = require('express');
 var uuid=require('node-uuid');
 var session = require('express-session')
 var cql = require('node-cassandra-cql');
-var client = new cql.Client({hosts: ['108.61.218.214', '108.61.218.220'], keyspace: 'site',username:'xx',password:"xx123456&*("});
+var client = new cql.Client({hosts: ['108.61.218.214', '108.61.218.220'], keyspace: 'site',username:'xx',password:"***********"});
 var router=express.Router();
 
 
