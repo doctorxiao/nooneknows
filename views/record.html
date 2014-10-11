@@ -1,0 +1,124 @@
+﻿<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row clearfix">
+				<div class="col-md-12 column" id="zt">
+				</div>
+				<div class="col-md-12 column">
+					<div id="lz" class="btn btn-default">录制</div>
+					<div id="st" class="btn btn-default">试听</div>
+					<div id="qc" class="btn btn-default">清除</div>
+				</div>
+			</div>
+			<div class="row clearfix">
+				<div class="col-md-12 column">
+					给音频贴标签：<br />
+					<input type="text" id="tag_input" /><br />
+					<div id="tbq" class="btn btn-default">贴</div>
+				</div>
+				<div class="col-md-12 column">
+					<div>标签列表：</div>
+					<div id="tags"></div>
+				</div>
+			</div>
+		</div>
+		<script>
+			var lz=false;
+			var ynr=false;
+			var tags=[];
+			$(document).ready(function() {
+				$('#lz').click(function(){
+					if (lz==false)
+					{
+						lz=true
+						$('#lz').html("停止")
+						$('#zt').html("录制中....")
+					} else
+					{
+						lz=false
+						ynr=true
+						if (ynr)
+						{
+							$('#lz').html("继续")
+						} else
+						{
+							$('#lz').html("录制")
+						}
+						$('#zt').html("已经录制了一段音频")
+					}
+				});
+				$('#qc').click(function(){
+					if (lz==false)
+					{
+						if (ynr==false)
+						{
+							alert("还没有录制音频，无需清除")
+						} else
+						{
+							ynr=false;
+							$('#zt').html("")
+							$('#lz').html("录制")
+						}
+					} else
+					{
+						alert("请先停止录音")
+					}
+				});
+				$('#st').click(function(){
+					if (lz==false)
+					{
+						if (ynr==false)
+						{
+							alert("还没有录制音频，无法试听")
+						} 
+					} else
+					{
+						alert("请先停止录音")
+					}
+				});
+				$('#tbq').click(function(){
+					if ($("#tag_input").val()!="")
+					{
+						var flag=false;
+						for (var i=0;i<tags.length;i++)
+						{
+							if (tags[i]==$("#tag_input").val())
+							{
+								flag=true;
+								return
+							}
+						}
+						if (!flag)
+						{
+							tags.push($("#tag_input").val())
+							refresh_tags()
+						}
+					}
+				})
+			});
+			function refresh_tags(){
+				var str=""
+				for (var i=0;i<tags.length;i++)
+				{
+					str+='<span class="label label-default ttt" style="margin-left:5px" onClick="del(tags['+i+'])">'+tags[i]+'</span>'
+				}
+				$("#tags").html(str)
+			}
+			
+			function del(a){
+				for (var i=0;i<tags.length;i++)
+				{
+					if (tags[i]==a)
+					{
+						tags.splice(i,1)
+					}
+				}
+				refresh_tags()
+			}
+		</script>
+	</body>
+</html>
