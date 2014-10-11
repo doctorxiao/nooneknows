@@ -2,7 +2,9 @@ var express = require('express');
 var oauth=require('./oauth.js');
 var userpanel=require('./userpanel.js');
 var session = require('express-session')
-
+var config=require("./config.js").config;
+var cql = require('node-cassandra-cql');
+var client = new cql.Client(config.cassandra);
 
 var app = express();
 app.use(session({secret: 'this is it sounds cool'}));
@@ -33,6 +35,17 @@ app.get('/bind', function(req, res){
 	res.send(str);
 });
 
+app.get('/cassandra',function(req, res){
+	client.execute("select * from system.schema_columns where keyspace_name='site';",[],function(err,result){
+		if (err)
+		{
+			res.send(err)
+			return 
+		}
+		res.send(result.rows)
+	})
+})
+
 app.get('/',function(req,res){
-	res.send('under construction<p><a href="http://www.itsounds.cool/login">登录功能</a></p>');
+	res.send('under construction<p><a href="http://www.itsounds.cool/login">登录功能</a></p><p><a href="http://www.itsounds.cool/cassandra">数据表结构</a></p>');
 })

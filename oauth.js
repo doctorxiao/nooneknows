@@ -3,9 +3,11 @@ var express = require('express');
 var uuid=require('node-uuid');
 var event=require('events');
 var session = require('express-session')
+var config=require("./config.js").config;
 var cql = require('node-cassandra-cql');
-var client = new cql.Client({hosts: ['108.61.218.214', '108.61.218.220'], keyspace: 'site',username:'xx',password:"***********"});
+var client = new cql.Client(config.cassandra);
 var router=express.Router();
+
 
 var loginevents=new event.EventEmitter();
 
