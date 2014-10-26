@@ -2,6 +2,7 @@ var express = require('express');
 var oauth=require('./oauth.js');
 var userpanel=require('./userpanel.js');
 var voice=require('./voice.js');
+var picbed=require('./picbed.js');
 var session = require('express-session')
 var config=require("./config.js").config;
 var cql = require('node-cassandra-cql');
@@ -19,6 +20,7 @@ var server = app.listen(80, function() {
 app.use("/loginback",oauth.back);
 app.use("/userpanel",userpanel.router);
 app.use("/voice",voice.router);
+app.use("/picbed",picbed.router);
 
 app.get('/login', function(req, res){
 	var str='<a href="https://graph.renren.com/oauth/authorize?client_id=0d84eb06e9304cd6ad5d56bbc5a4c76e&redirect_uri=http://www.itsounds.cool/loginback/renrenlogin&response_type=code">从人人登录</a>';
@@ -44,10 +46,16 @@ app.get('/cassandra',function(req, res){
 			res.send(err)
 			return 
 		}
-		res.send(result.rows)
+		var str=""
+		for(var i=0;i<result.rows.length;i++)
+		{
+			str+="table:"+result.rows[i].columnfamily_name+"<br />column:"+result.rows[i].column_name+"<br />type:"+result.rows[i].validator+"<br />index:"+result.rows[i].index_name+"<br /><br /><br />"
+		}
+		res.send(str)
 	})
 })
 
+
 app.get('/',function(req,res){
-	res.send('under construction<p><a href="http://www.itsounds.cool/login">登录功能</a></p><p><a href="http://www.itsounds.cool/cassandra">数据表结构</a></p>');
+	res.send('under construction<p><a href="http://www.itsounds.cool/login">登录功能</a></p><p><a href="http://www.itsounds.cool/picbed/upload">图床功能</a></p><p><a href="http://www.itsounds.cool/cassandra">数据表结构</a></p>');
 })
