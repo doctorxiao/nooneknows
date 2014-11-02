@@ -3,7 +3,7 @@ var crypto=require("crypto")
 var config=require("./config.js").config
 var ossoption = {
   accessKeyId: config.aliyunoss.accessKeyId,
-  accessKeySecret: config.aliyunoss.accessKeySecret,
+  accessKeySecret: config.aliyunoss.accessKeysecret,
   host:config.aliyunoss.host
 };
 var ossclient = oss.createClient(ossoption);

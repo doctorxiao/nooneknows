@@ -42,7 +42,7 @@
             attributes.align = "middle";
             swfobject.embedSWF(
                 "recoder.swf", "flashContent", 
-                "300", "100", 
+                "300", "150", 
                 swfVersionStr, xiSwfUrlStr, 
                 flashvars, params, attributes);
             // JavaScript enabled so display the flashContent div in case it is not replaced with a swf object.
@@ -67,17 +67,17 @@
         </div>
         
         <noscript>
-            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="300" height="100" id="recoder">
-                <param name="movie" value="https://github.com/doctorxiao/nooneknows/blob/master/tools/uploadvoice/recoder.swf?raw=true" />
+            <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="300" height="150" id="recoder">
+                <param name="movie" value="recoder.swf" />
                 <param name="quality" value="high" />
                 <param name="bgcolor" value="#ffffff" />
                 <param name="allowScriptAccess" value="always" />
                 <param name="allowFullScreen" value="true" />
                 <!--[if !IE]>-->
-                <object type="application/x-shockwave-flash" data="https://github.com/doctorxiao/nooneknows/blob/master/tools/uploadvoice/recoder.swf?raw=true" width="300" height="100">
+                <object type="application/x-shockwave-flash" data="recoder.swf" width="300" height="150">
                     <param name="quality" value="high" />
                     <param name="bgcolor" value="#ffffff" />
-                    <param name="allowScriptAccess" value="sameDomain" />
+                    <param name="allowScriptAccess" value="always" />
                     <param name="allowFullScreen" value="true" />
                 <!--<![endif]-->
                 <!--[if gte IE 6]>-->
@@ -114,6 +114,7 @@
         		var bfq=document.getElementById("myaudio")
         		bfq.src=URL.createObjectURL(blob)
         	}
+			var oReq = new XMLHttpRequest();
 			function send()
 			{
 				if (hasnot)
@@ -121,11 +122,25 @@
 					alert("您还没有录音")
 					return 
 				}
-				var oReq = new XMLHttpRequest();
-				oReq.open("POST", "http://www.itsounds.cool/sendaudio");
+				oReq.onreadystatechange=state_Change;
+				oReq.open("POST", "http://www.itsounds.cool/voice/sendaudio");
 				oReq.send(oMyForm);
 			}
- 
+			function state_Change()
+			{
+				if (oReq.readyState==4)
+				{// 4 = "loaded"
+					if (oReq.status==200)
+					{// 200 = OK
+						alert("录音上传ok，转去云存储URL")
+						location.href=oReq.responseText
+					}
+					else
+					{
+						alert("Problem retrieving XML data");
+					}
+				}
+			}
         </script>
    </body>
 </html>

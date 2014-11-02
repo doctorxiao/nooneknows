@@ -6,6 +6,7 @@ var upload=require("./upload.js");
 var cql = require('node-cassandra-cql');
 var ejs=require("ejs")
 var client = new cql.Client(config.cassandra);
+var bodyparser=require("body-parser")
 var multiparty = require('multiparty')
 var util = require('util')
 var fs = require('fs');
@@ -15,18 +16,10 @@ var crypto=require("crypto")
 app.set('views', __dirname + '/views');
 app.engine('html', ejs.__express);
 app.set('view engine','html');
-router.get("/record",function(req,res){
-	app.render("recorder",{},function(err,html){
-		if (err)
-		{
-			console.log(err)
-			return
-		}
-		res.send(html)
-	})
-})
+app.use(bodyparser.urlencoded({ extended: false }))
+app.use(bodyparser.json())
 
-router.post("/sendaudio",function(req,res){
+app.post("/sendaudio",function(req,res){
 	var form = new multiparty.Form();
 	form.parse(req, function(err, fields, files) {
 		try
@@ -56,7 +49,7 @@ router.post("/sendaudio",function(req,res){
 					}
 					if (result.rows.length>0)
 					{
-						res.send(result.rows[0].url)
+						res.send("URL:"+result.rows[0].url)
 					} else
 					{
 						upload.uploadBuffer(tupload,function(err,result1){
@@ -68,12 +61,9 @@ router.post("/sendaudio",function(req,res){
 							}
 							if (result1.status!=undefined && result1.status==200 && result1.objectUrl!=undefined)
 							{
-								res.send(result1.objectUrl)
+								res.send("URL:"+result1.objectUrl)
 								client.execute("insert into voice (size,md5,url,uploadtime) values (?,?,?,?)",[data.length,md5result,result1.objectUrl,Date.parse(new Date())/1000],function(err,result2){
-									if (err)
-									{
-										console.log(err)
-									}
+									console.log(err)
 								})
 							}
 						})
@@ -89,5 +79,6 @@ router.post("/sendaudio",function(req,res){
 	})
 })
 
-exports.router=router;
-
+var server = app.listen(80, function() {
+    console.log('Listening on port %d', server.address().port);
+});

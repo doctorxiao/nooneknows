@@ -10,7 +10,7 @@ var client = new cql.Client(config.cassandra);
 
 var app = express();
 app.use(session({secret: 'this is it sounds cool'}));
-
+app.use("/public",express.static('public'));
 var server = app.listen(80, function() {
     console.log('Listening on port %d', server.address().port);
 });
