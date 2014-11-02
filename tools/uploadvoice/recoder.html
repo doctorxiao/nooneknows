@@ -34,7 +34,7 @@
             var params = {};
             params.quality = "high";
             params.bgcolor = "#ffffff";
-            params.allowscriptaccess = "sameDomain";
+            params.allowscriptaccess = "always";
             params.allowfullscreen = "true";
             var attributes = {};
             attributes.id = "recoder";
@@ -68,13 +68,13 @@
         
         <noscript>
             <object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="300" height="100" id="recoder">
-                <param name="movie" value="recoder.swf" />
+                <param name="movie" value="https://github.com/doctorxiao/nooneknows/blob/master/tools/uploadvoice/recoder.swf?raw=true" />
                 <param name="quality" value="high" />
                 <param name="bgcolor" value="#ffffff" />
-                <param name="allowScriptAccess" value="sameDomain" />
+                <param name="allowScriptAccess" value="always" />
                 <param name="allowFullScreen" value="true" />
                 <!--[if !IE]>-->
-                <object type="application/x-shockwave-flash" data="recoder.swf" width="300" height="100">
+                <object type="application/x-shockwave-flash" data="https://github.com/doctorxiao/nooneknows/blob/master/tools/uploadvoice/recoder.swf?raw=true" width="300" height="100">
                     <param name="quality" value="high" />
                     <param name="bgcolor" value="#ffffff" />
                     <param name="allowScriptAccess" value="sameDomain" />
