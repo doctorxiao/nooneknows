@@ -8,9 +8,9 @@ var cql = require('node-cassandra-cql');
 var client = new cql.Client(config.cassandra);
 var router=express.Router();
 
-
 var loginevents=new event.EventEmitter();
-
+var app = express();
+app.use(session({secret: 'this is it sounds cool', resave:true, saveUninitialized :true }));
 
 loginevents.on("weiboaccesstokengot",function(req,res,access_token,method){
 	https.get("https://api.weibo.com/2/account/get_uid.json?access_token="+access_token,function(resa){
@@ -64,12 +64,12 @@ loginevents.on("loginuidgot",function(req,res,uid,source,name,email,photo,access
 					res.send("内部错误，请重试3");
 					return ;
 				}
-				session.uuid=uuidtmp
-				if (session.token==undefined)
+				req.session.uuid=uuidtmp
+				if (req.session.token==undefined)
 				{
-					session.token=[]
+					req.session.token=[]
 				}
-				session.token[source]=access_token
+				req.session.token[source]=access_token
 				client.execute("insert into source (uid,site,userid,access_token) values (?,?,?,?)",[uid,source,uuidtmp,access_token],function(insert_source_err,insert_source_result){
 					if (insert_source_err)
 					{
@@ -81,12 +81,12 @@ loginevents.on("loginuidgot",function(req,res,uid,source,name,email,photo,access
 			})
 		} else
 		{
-			session.uuid=result.rows[0].userid;
-			if (session.token==undefined)
+			req.session.uuid=result.rows[0].userid;
+			if (req.session.token==undefined)
 			{
-				session.token=[]
+				req.session.token=[]
 			}
-			session.token[source]=access_token;
+			req.session.token[source]=access_token;
 			res.redirect('http://www.itsounds.cool/userpanel/index');
 		}
 	})				
@@ -103,7 +103,7 @@ loginevents.on("binduidgot",function(req,res,uid,source,name,email,photo,access_
 			var uuidtmp="";
 			try
 			{
-				uuidtmp=session.uuid;
+				uuidtmp=req.session.uuid;
 			}
 			catch (exception){
 			
@@ -119,11 +119,11 @@ loginevents.on("binduidgot",function(req,res,uid,source,name,email,photo,access_
 					res.send("内部错误，请重试4");
 					return ;
 				}
-				if (session.token==undefined)
+				if (req.session.token==undefined)
 				{
-					session.token=[]
+					req.session.token=[]
 				}
-				session.token[source]=access_token
+				req.session.token[source]=access_token
 				res.redirect('http://www.itsounds.cool/userpanel/index');
 			})
 		} else
@@ -134,7 +134,8 @@ loginevents.on("binduidgot",function(req,res,uid,source,name,email,photo,access_
 })
 
 router.get("/checklogin",function(req,res){
-	res.send(session.uuid)
+	console.log(req.session.cookie)
+	res.send(req.session.uuid)
 })
 
 router.get("/weibologin",function(req,res){

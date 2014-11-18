@@ -3,13 +3,14 @@ var oauth=require('./oauth.js');
 var userpanel=require('./userpanel.js');
 var voice=require('./voice.js');
 var picbed=require('./picbed.js');
+var image=require('./image.js');
 var session = require('express-session')
 var config=require("./config.js").config;
 var cql = require('node-cassandra-cql');
 var client = new cql.Client(config.cassandra);
 
 var app = express();
-app.use(session({secret: 'this is it sounds cool'}));
+app.use(session({secret: 'this is it sounds cool', resave:true, saveUninitialized :true }));
 app.use("/public",express.static('public'));
 var server = app.listen(80, function() {
     console.log('Listening on port %d', server.address().port);
@@ -21,6 +22,7 @@ app.use("/loginback",oauth.back);
 app.use("/userpanel",userpanel.router);
 app.use("/voice",voice.router);
 app.use("/picbed",picbed.router);
+app.use("/image",image.router);
 
 app.get('/login', function(req, res){
 	var str='<a href="https://graph.renren.com/oauth/authorize?client_id=0d84eb06e9304cd6ad5d56bbc5a4c76e&redirect_uri=http://www.itsounds.cool/loginback/renrenlogin&response_type=code">从人人登录</a>';
