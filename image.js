@@ -49,6 +49,215 @@ router.get("/newalbum",function(req,res){
 	}
 })
 
+
+router.get("/modifyalbum/:id",function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	if (!result)
+	{
+		app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您还没有登录，不能访问这里",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+	} else {
+		var obj={}
+		client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result){
+			if (err)
+			{
+				app.render("error",{msg:"发生了一些错误",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误")
+						return
+					}
+					res.send(html)
+				})
+				return 
+			}
+			if (result.rows.length<1)
+			{
+				app.render("error",{msg:"参数错误，不存在这个图集",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误")
+						return
+					}
+					res.send(html)
+				})
+				return 
+			}
+			if (result.rows[0].userid!=req.session.uuid)
+			{
+				app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误")
+						return
+					}
+					res.send(html)
+				})
+				return 
+			}
+			obj=result.rows[0]
+			app.render("image_newablum",{album:obj},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误")
+					return
+				}
+				res.send(html)
+			})
+		})
+	}
+})
+
+
+router.get("/delalbum/:id",function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	if (!result)
+	{
+		app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您还没有登录，不能访问这里",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	} 
+	client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			app.render("error",{msg:"发生了一些错误,请重试",page:"上一页",pageurl:"javascript:history.go(-1)"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误，不存在这个图集",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows[0].userid!=req.session.uuid)
+		{
+			app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		client.execute("select * from pic_album_item where album_id=? limit 1 allow filtering;",[result.rows[0].id],function(err,result1){
+			if (err)
+			{
+				app.render("error",{msg:"发生了一些错误,请重试",page:"上一页",pageurl:"javascript:history.go(-1)"},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误")
+						return
+					}
+					res.send(html)
+				})
+				return 
+			}
+			if (result1.rows.length>0)
+			{
+				app.render("error",{msg:"这个图集不是空的，不能删除",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误")
+						return
+					}
+					res.send(html)
+				})
+				return 
+			}
+			client.execute("delete from pic_album where id=?",[req.param('id')],function(err,result2){
+				if (err)
+				{
+					app.render("error",{msg:"发生了一些错误,请重试",page:"上一页",pageurl:"javascript:history.go(-1)"},function(err,html){
+						if (err)
+						{
+							console.error(err)
+							res.send("发生了一些错误")
+							return
+						}
+						res.send(html)
+					})
+					return 
+				}
+				app.render("error",{msg:"操作成功：图集已删除",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误")
+						return
+					}
+					res.send(html)
+				})
+			})
+		})
+	})
+})
+
 router.post("/newalbum_save",bodyparser.urlencoded({ extended: false }),function(req,res){
 	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
 	{
@@ -99,7 +308,7 @@ router.post("/newalbum_save",bodyparser.urlencoded({ extended: false }),function
 				{
 					if (result.rows[0].userid!=req.session.uuid)
 					{
-						app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/result.rows[0].id"},function(err,html){
+						app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
 							if (err)
 							{
 								console.error(err)
@@ -114,6 +323,16 @@ router.post("/newalbum_save",bodyparser.urlencoded({ extended: false }),function
 							if (err)
 							{
 								app.render("error",{msg:"发生内部错误，请重试",page:"上一页",pageurl:"javascript:history.go(-1)"},function(err,html){
+									if (err)
+									{
+										console.error(err)
+										res.send("发生了一些错误")
+										return
+									}
+									res.send(html)
+								})
+							}  else {
+								app.render("error",{msg:"操作成功，信息已修改",page:"图集"+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
 									if (err)
 									{
 										console.error(err)
