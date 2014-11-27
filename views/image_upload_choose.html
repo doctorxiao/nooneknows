@@ -1,0 +1,13 @@
+﻿<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+	</head>
+	<body>
+		<% albums.forEach(function(album){ %>
+		<div>
+			<a href="http://www.itsounds.cool/image/upload_album/<%= album.id %>">上传图片到<%= album.name %></a>
+		</div>
+		<% }) %>
+	</body>
+</html>

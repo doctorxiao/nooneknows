@@ -1,0 +1,62 @@
+﻿<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+	</head>
+	<body>
+		<input id="fileupload" type="file" name="filesupload" data-url="http://www.itsounds.cool/image/upload_save/<%= album.id %>" multiple>
+		<div id="result">
+		</div>
+		<div class="progress">
+  <div class="progress-bar progress-bar-striped active" id="probar" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+    <span class="sr-only">0%</span>
+  </div>
+</div>
+		<script src="http://www.itsounds.cool/public/jfu/js/vendor/jquery.ui.widget.js"></script>
+		<script src="http://www.itsounds.cool/public/jfu/js/jquery.iframe-transport.js"></script>
+		<script src="http://www.itsounds.cool/public/jfu/js/jquery.fileupload.js"></script>
+		<script>
+		    var totalNum=0;
+			var doneNum=0;
+			$(function () {
+				$('#fileupload').fileupload({
+					dataType: 'json',
+					singleFileUploads:true,
+					sequentialUploads: false,
+					limitConcurrentUploads:5,
+					maxFileSize:20000000,
+					add: function (e, data) {
+						$.each(data.files, function (index, file) {
+							totalNum=totalNum+1;
+							var progress = parseInt(doneNum / totalNum * 100, 10);
+							$('#probar').css(
+								'width',
+								progress+"%"
+							);
+							data.submit();
+							refresh();
+						});
+					},
+					done: function (e, data) {
+						$.each(data.files, function (index, file) {
+							doneNum=doneNum+1;
+							var progress = parseInt(doneNum / totalNum * 100, 10);
+							$('#probar').css(
+								'width',
+								progress+"%"
+							);
+							refresh();
+						});
+					},
+					progressall: function (e, data) {
+						
+					}
+				});
+				function refresh()
+				{
+					$("#result").html("已选择"+totalNum+"幅图片，已成功上传"+doneNum+"幅图片");
+				}
+			});
+		</script>
+	</body>
+</html>

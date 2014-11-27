@@ -8,10 +8,24 @@ var session = require('express-session')
 var config=require("./config.js").config;
 var cql = require('node-cassandra-cql');
 var client = new cql.Client(config.cassandra);
-
+var path=require('path');
+var serveStatic = require('serve-static')
 var app = express();
+
+var options = {
+  dotfiles: 'ignore',
+  etag: false,
+  extensions: ['htm', 'html'],
+  index: false,
+  maxAge: '1d',
+  redirect: false,
+  setHeaders: function (res, path, stat) {
+    res.set('x-timestamp', Date.now())
+  }
+};
+
+app.use('/public',serveStatic('/var/sitexiao/public', {'index': ['default.html', 'default.htm']}))
 app.use(session({secret: 'this is it sounds cool', resave:true, saveUninitialized :true }));
-app.use("/public",express.static('public'));
 var server = app.listen(80, function() {
     console.log('Listening on port %d', server.address().port);
 });

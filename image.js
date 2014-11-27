@@ -378,4 +378,302 @@ router.post("/newalbum_save",bodyparser.urlencoded({ extended: false }),function
 	}
 })
 
+router.get('/upload_images',function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您还没有登录，不能访问这里",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	client.execute("select * from pic_album where userid=?",[req.session.uuid],function(err,result){
+		if (err)
+		{
+			app.render("error",{msg:"发生内部错误",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		app.render("image_upload_choose",{albums:result.rows},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+	})
+})
+
+router.get('/upload_album/:id',function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	if (!result)
+	{
+		app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误1")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您还没有登录，不能访问这里",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			app.render("error",{msg:"发生内部错误",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误3")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误，不存在这个图集",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误4")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		if (result.rows[0].userid!=req.session.uuid)
+		{
+			app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误5")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		app.render("image_upload_album",{album:result.rows[0]},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误6")
+					return
+				}
+				res.send(html)
+		})
+	})
+})
+
+router.post('/upload_save/:id',function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	var output={}
+	output.files=[]
+	if (!result)
+	{
+		res.send("参数错误"); //待改
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		var oi={}
+		oi.name=(files.filesupload)[0].originalFilename
+		oi.error="login error"
+		output.files.push(oi)
+		res.send(output)
+		return 
+	}
+	client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result0){
+		if (err)
+		{
+			var oi={}
+			oi.name=(files.filesupload)[0].originalFilename
+			oi.error="internal error0"
+			output.files.push(oi)
+			res.send(output)
+			return
+		}
+		if (result0.rows.length<1)
+		{
+			var oi={}
+			oi.name=(files.filesupload)[0].originalFilename
+			oi.error="internal error01"
+			output.files.push(oi)
+			res.send(output)
+			return
+		}
+		if (result0.rows[0].userid!=req.session.uuid)
+		{
+			var oi={}
+			oi.name=(files.filesupload)[0].originalFilename
+			oi.error="internal error02"
+			output.files.push(oi)
+			res.send(output)
+			return
+		}
+		var form = new multiparty.Form({maxFilesSize:"20971520"});
+		form.parse(req, function(err, fields, files) {
+			try
+			{
+				fs.readFile((files.filesupload)[0].path, function (err, data) {
+					if (err)
+					{
+						var oi={}
+						oi.name=(files.filesupload)[0].originalFilename
+						oi.error="internal error"
+						output.files.push(oi)
+						res.send(output)
+						return 
+					}
+					var tupload={}
+					tupload.buffer=data
+					tupload.contentType=(files.filesupload)[0].headers["content-type"]
+					tupload.fileSuffix=tupload.contentType.substring(tupload.contentType.indexOf("/")+1).toLowerCase()
+					if (tupload.fileSuffix!="bmp" &&tupload.fileSuffix!="gif" &&tupload.fileSuffix!="jpg" &&tupload.fileSuffix!="jpeg" &&tupload.fileSuffix!="png")
+					{
+						var oi={}
+						oi.name=(files.filesupload)[0].originalFilename
+						oi.error="format error"
+						output.files.push(oi)
+						res.send(output)
+						return
+					}
+					tupload.is_Pic=true
+					var md5=crypto.createHash('md5')
+					md5.update(data)
+					var md5result=md5.digest('hex')
+					var url="";
+					client.execute("select * from pic where size=? and md5=?",[data.length,md5result],function(err,result){
+						if (err)
+						{
+							return
+						}
+						if (result.rows.length>0)
+						{
+							url=result.rows[0].url
+						} else
+						{
+							upload.uploadBuffer(tupload,function(err,result1){
+								if (err)
+								{
+									console.error(err)
+									var oi={}
+									oi.name=(files.filesupload)[0].originalFilename
+									oi.error="internal error2"
+									output.files.push(oi)
+									res.send(output)
+									return 
+								}
+								if (result1.status!=undefined && result1.status==200 && result1.objectUrl!=undefined)
+								{
+									url=result1.objectUrl
+									client.execute("insert into pic (size,md5,url,uploadtime) values (?,?,?,?)",[data.length,md5result,result1.objectUrl,Date.parse(new Date())/1000],function(err,result2){
+										if (err)
+										{
+											var oi={}
+											oi.name=(files.filesupload)[0].originalFilename
+											oi.error="internal error3"
+											output.files.push(oi)
+											res.send(output)
+											return 
+										}
+										client.execute("insert into pic_album_item (album_id,createtime,title,descript,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),Date.parse(new Date())/1000,"","",md5result,data.length,url,uuid.v4()],function(err,result3){
+											if (err)
+											{
+												var oi={}
+												oi.name=(files.filesupload)[0].originalFilename
+												oi.error="internal error4"
+												output.files.push(oi)
+												res.send(output)
+												return 
+											}
+											var oi={}
+											oi.name=(files.filesupload)[0].originalFilename
+											oi.size=data.length
+											oi.url=url
+											output.files.push(oi)
+											res.send(output)
+										})
+									})
+								}
+							})
+						}
+					})
+				})
+			}
+			catch (err)
+			{
+				console.error(err)
+			}
+		})
+	})
+})
+
+router.post('/upload_album_save/:id',function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	if (!result)
+	{
+		res.send("参数错误"); //待改
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("未登录"); //待改
+		return 
+	}
+	client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			res.send("内部错误"); //待改
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("参数错误"); //待改
+			return 
+		}
+		if (result.rows[0].userid!=req.session.uuid)
+		{
+			res.send("权限错误"); //待改
+			return 
+		}
+	})
+})
+
 exports.router=router;
