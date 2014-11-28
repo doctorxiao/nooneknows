@@ -1,0 +1,1 @@
+javascript:(function(a,b,d){a.soundscool?a.soundscool.getpics():(d=b.createElement('script'),d.id='soundscool_script',d.setAttribute('charset','utf-8'),d.src='http://www.itsounds.cool/public/js/caiji.js?'+Math.floor(+new Date/1e7),b.body.appendChild(d))})(window,document);
