@@ -512,7 +512,7 @@ router.post('/upload_save/:id',function(req,res){
 	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
 	{
 		var oi={}
-		oi.name=(files.filesupload)[0].originalFilename
+		oi.name="nofile.no"
 		oi.error="login error"
 		output.files.push(oi)
 		res.send(output)
@@ -522,7 +522,7 @@ router.post('/upload_save/:id',function(req,res){
 		if (err)
 		{
 			var oi={}
-			oi.name=(files.filesupload)[0].originalFilename
+			oi.name="nofile.no"
 			oi.error="internal error0"
 			output.files.push(oi)
 			res.send(output)
@@ -531,7 +531,7 @@ router.post('/upload_save/:id',function(req,res){
 		if (result0.rows.length<1)
 		{
 			var oi={}
-			oi.name=(files.filesupload)[0].originalFilename
+			oi.name="nofile.no"
 			oi.error="internal error01"
 			output.files.push(oi)
 			res.send(output)
@@ -540,7 +540,7 @@ router.post('/upload_save/:id',function(req,res){
 		if (result0.rows[0].userid!=req.session.uuid)
 		{
 			var oi={}
-			oi.name=(files.filesupload)[0].originalFilename
+			oi.name="nofile.no"
 			oi.error="internal error02"
 			output.files.push(oi)
 			res.send(output)
@@ -612,9 +612,10 @@ router.post('/upload_save/:id',function(req,res){
 											res.send(output)
 											return 
 										}
-										client.execute("insert into pic_album_item (album_id,createtime,title,descript,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),Date.parse(new Date())/1000,"","",md5result,data.length,url,uuid.v4()],function(err,result3){
+										client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),cql.types.Long.fromString(new Date().getTime().toString()),"","",md5result,data.length,url,uuid.v4()],function(err,result3){
 											if (err)
 											{
+												console.error(err)
 												var oi={}
 												oi.name=(files.filesupload)[0].originalFilename
 												oi.error="internal error4"
@@ -674,6 +675,55 @@ router.post('/upload_album_save/:id',function(req,res){
 			return 
 		}
 	})
+})
+
+router.post("/caiji",bodyparser.urlencoded({ extended: false }),function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您还没有登录，请登录后重试",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.body.gotpics==undefined)
+	{
+		app.render("error",{msg:"参数错误请重试",page:"登录页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	var obj=JSON.parse(req.body.gotpics)
+	if (obj.imgs==undefined || obj.imgs.length==0)
+	{
+		app.render("error",{msg:"参数错误请重试",page:"登录页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2")
+				return
+			}
+			res.send(html)
+		})
+		return
+	}
+	var str="";
+	for (var i=0;i<obj.imgs.length;i++)
+	{
+		str+="<div><div><img src=\""+obj.imgs[i].src+"\" alt=\""+obj.imgs[i].alt+"\" /></div><div>尺寸："+obj.imgs[i].width+"*"+obj.imgs[i].height+"</div></div>"; 
+	}
+	res.send(str);
 })
 
 exports.router=router;
