@@ -718,12 +718,43 @@ router.post("/caiji",bodyparser.urlencoded({ extended: false }),function(req,res
 		})
 		return
 	}
-	var str="";
-	for (var i=0;i<obj.imgs.length;i++)
-	{
-		str+="<div><div><img src=\""+obj.imgs[i].src+"\" alt=\""+obj.imgs[i].alt+"\" /></div><div>尺寸："+obj.imgs[i].width+"*"+obj.imgs[i].height+"</div></div>"; 
-	}
-	res.send(str);
+	client.execute("select * from pic_album where userid=?",[req.session.uuid],function(err,result){
+		if (err)
+		{
+			app.render("error",{msg:"内部错误，请重试",page:"登录页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("内部错误，请重试")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"您没有图集，请先新建一个",page:"新建图集",pageurl:"http://www.itsounds.cool/image/newalbum"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("内部错误2，请重试")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		app.render("image_caiji",{pics:obj.imgs,albums:result.rows},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("内部错误3，请重试")
+				return
+			}
+			res.send(html)
+		})
+	})
 })
 
 exports.router=router;

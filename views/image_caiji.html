@@ -1,0 +1,97 @@
+﻿<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+		<script src="http://www.itsounds.cool/public/masonry/masonry.pkgd.min.js"></script>
+	</head>
+	<body>
+		<div id="main" style="width:1000px;margin-left:auto;margin-right:auto">
+			<div id="top">
+				<div>
+					选择图集：
+					<select id="choose_album">
+						<% albums.forEach(function(album){ %>
+						<option value="<%= album.id %>">
+							<%= album.name %>
+						</option>
+						<% }) %>
+					</select>
+				</div>
+				<div>
+					共有<%= pics.length %>张图片，已选择<span id="selectednum">0</span>张图片<br />
+					<button id="sc">确定采集</button>
+				</div>
+			</div>
+			<div id="container">
+				<% pics.forEach(function(pic){ %>
+					<div class="picitem">
+						<div>
+							<img src="<%= pic.src %>" width="180" />
+						</div>
+						<div>
+							尺寸：<%= pic.width %>* <%= pic.height %>
+						</div>
+					</div>
+				<% }) %>
+			</div>
+		</div>
+	</body>
+</html>
+<script>
+var $container = $('#container');
+// initialize
+$container.masonry({
+  columnWidth: 200,
+  itemSelector: '.picitem'
+});
+
+$(".picitem").click(function(){
+	var a=$(this).find("img")[0].src;
+	var flag=false;
+	for (var i=0;i<selectedurl.length;i++)
+	{
+		if (selectedurl[i]==a)
+		{
+			flag=true;
+		}
+	}
+	if (flag)
+	{
+		deleteurl(a);
+		$(this).css("background","#ffffff");
+	} else
+	{
+		inserturl(a);
+		$(this).css("background","#f00");
+	}
+})
+
+var selectedurl=[]
+function inserturl(a)
+{
+	var flag=false;
+	for (var i=0;i<selectedurl.length;i++)
+	{
+		if (selectedurl[i]==a)
+		{
+			flag=true;
+		}
+	}
+	if (!flag)
+	{
+		selectedurl.push(a);
+		$("#selectednum").html(selectedurl.length)
+	}
+}
+function deleteurl(a)
+{
+	for (var i=0;i<selectedurl.length;i++)
+	{
+		if (selectedurl[i]==a)
+		{
+			selectedurl.splice(i,1);
+			$("#selectednum").html(selectedurl.length)
+		}
+	}
+}
+</script>
