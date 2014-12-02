@@ -10,6 +10,10 @@ var bodyparser=require("body-parser")
 var multiparty = require('multiparty')
 var util = require('util')
 var fs = require('fs');
+var url=require('url');
+var event=require("events")
+var sizeOf = require('image-size');
+var http=require("http")
 var router=express.Router();
 var app = express();
 var crypto=require("crypto")
@@ -693,7 +697,7 @@ router.post("/caiji",bodyparser.urlencoded({ extended: false }),function(req,res
 	}
 	if (req.body.gotpics==undefined)
 	{
-		app.render("error",{msg:"参数错误请重试",page:"登录页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+		app.render("error",{msg:"参数错误请重试",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
 			if (err)
 			{
 				console.error(err)
@@ -707,7 +711,7 @@ router.post("/caiji",bodyparser.urlencoded({ extended: false }),function(req,res
 	var obj=JSON.parse(req.body.gotpics)
 	if (obj.imgs==undefined || obj.imgs.length==0)
 	{
-		app.render("error",{msg:"参数错误请重试",page:"登录页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+		app.render("error",{msg:"参数错误请重试",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
 			if (err)
 			{
 				console.error(err)
@@ -745,7 +749,12 @@ router.post("/caiji",bodyparser.urlencoded({ extended: false }),function(req,res
 			})
 			return
 		}
-		app.render("image_caiji",{pics:obj.imgs,albums:result.rows},function(err,html){
+		var other={}
+		other.referer=obj.referer;
+		if (obj.cookie!=undefined) {
+			other.cookie=obj.cookie;
+		}
+		app.render("image_caiji",{pics:obj.imgs,albums:result.rows,other:JSON.stringify(other)},function(err,html){
 			if (err)
 			{
 				console.error(err)
@@ -756,5 +765,240 @@ router.post("/caiji",bodyparser.urlencoded({ extended: false }),function(req,res
 		})
 	})
 })
+
+router.post("/caijigot",bodyparser.urlencoded({ extended: false }),function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您还没有登录，请登录后重试",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.body.pics==undefined)
+	{
+		app.render("error",{msg:"参数错误请重试1",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	var obj=JSON.parse(req.body.pics)
+	if (obj.pics==undefined || obj.pics.length==0)
+	{
+		app.render("error",{msg:"参数错误请重试2",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误3")
+				return
+			}
+			res.send(html)
+		})
+		return
+	}
+	if (obj.albumid==undefined)
+	{
+		app.render("error",{msg:"参数错误请重试3",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误4")
+				return
+			}
+			res.send(html)
+		})
+		return
+	}
+	var albumid=obj.albumid;
+	client.execute("select * from pic_album where id=?",[albumid],function(err,result0){
+		if (err)
+		{
+			console.error(err)
+			return 
+		}
+		if (result0.rows.length<1 || result0.rows[0].userid!=req.session.uuid)
+		{
+			app.render("error",{msg:"权限错误",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误5")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+	
+		var other=JSON.parse(obj.other);
+		var j=100;
+		if (j>obj.pics.length)
+		{
+			j=obj.pics.length;
+		}
+		for(var i=0;i<j;i++)
+		{	
+			if (downloadpic<200)
+			{
+				var tmp={}
+				tmp.url=url.parse(obj.pics[i]);
+				if (other.referer!=undefined || other.cookie!=undefined)
+				{
+					tmp.url.headers=other
+				}
+				handleDownload(tmp.url,albumid)
+			}
+		}
+		app.render("error",{msg:"操作成功",page:"浏览图集",pageurl:"http://www.itsounds.cool/image/imagecollection/"+albumid},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误6")
+				return
+			}
+			res.send(html)
+		})
+	})
+})
+
+var downloadpic=0;
+function handleDownload(urlobj,albumid)
+{
+	var emmiter=new event.EventEmitter();
+	emmiter.on("start",function(urlobj){
+		if (downloadpic>200)
+		{
+			return;
+		}
+		downloadpic=downloadpic+1
+		http.get(urlobj,function(sres){
+			if(sres.statusCode==200)
+			{
+				var buffers=[]
+				var buflength=0;
+				var toolarge=false;
+				sres.on('data', function (chunk) {
+					buffers.push(chunk)
+					buflength+=chunk.length
+					if (buflength>1024*1024*20)
+					{
+						toolarge=true;
+						sres.end();
+					}
+				});
+				sres.on("end",function(){
+					if (!toolarge)
+					{
+						var buf=Buffer.concat(buffers)
+						console.error(buf)
+						emmiter.emit("checksize",buf)
+						if (downloadpic>0)
+						{
+							downloadpic=downloadpic-1;
+						}
+					}
+				})
+			} else
+			{
+				console.error("geting error");
+				if (downloadpic>0)
+				{
+					downloadpic=downloadpic-1;
+				}
+			}
+		}).on('error', function(e) {
+			console.error("Got error: " + e.message);
+			if (downloadpic>0)
+			{
+				downloadpic=downloadpic-1;
+			}
+		});
+	})
+	emmiter.on("checksize",function(buf){
+		try{
+			var size=sizeOf(buf)
+			if (size.type.toLowerCase()=="jpeg"||size.type.toLowerCase()=="jpg"||size.type.toLowerCase()=="bmp"||size.type.toLowerCase()=="png"||size.type.toLowerCase()=="gif")
+			{
+				if (size.width>100||size.height>100)
+				{
+					emmiter.emit("upload",buf,size)
+				}
+			}
+		}
+		catch (e)
+		{
+			console.error(e)
+		}
+	})
+	
+	emmiter.on("upload",function(buf,size){
+		var md5=crypto.createHash('md5')
+		md5.update(buf)
+		var md5result=md5.digest('hex')
+		var url="";
+		client.execute("select * from pic where size=? and md5=?",[buf.length,md5result],function(err,result){
+			if (err)
+			{
+				console.error(err)
+				return
+			}
+			if (result.rows.length<1)
+			{
+				var tupload={}
+				tupload.buffer=buf
+				tupload.contentType="image/"+size.type
+				tupload.fileSuffix=size.type
+				tupload.is_Pic=true
+				upload.uploadBuffer(tupload,function(err,result1){
+					if (err)
+					{
+						console.error(err)
+						return 
+					}
+					if (result1.status!=undefined && result1.status==200 && result1.objectUrl!=undefined)
+					{
+						client.execute("insert into pic (size,md5,url,uploadtime) values (?,?,?,?)",[buf.length,md5result,result1.objectUrl,Date.parse(new Date())/1000],function(err,result2){
+							if (err)
+							{
+								return 
+							}
+							client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[albumid,cql.types.Long.fromString(new Date().getTime().toString()),"","",md5result,buf.length,result1.objectUrl,uuid.v4()],function(err,result3){emmiter=null;})
+						})
+					} else
+					{
+						console.error(result1)
+						emmiter=null;
+					}
+				})
+			} else
+			{
+				url=result.rows[0].url;
+				client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[albumid,cql.types.Long.fromString(new Date().getTime().toString()),"","",md5result,buf.length,url,uuid.v4()],function(err,result3){
+					emmiter=null;
+				})
+			}
+		})
+	})
+	
+	emmiter.on("error",function(e){
+		console.error(e)
+	})
+	
+	
+	
+	emmiter.emit("start",urlobj)
+}
+
 
 exports.router=router;
