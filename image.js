@@ -114,7 +114,7 @@ router.get("/modifyalbum/:id",function(req,res){
 			}
 			if (result.rows[0].userid!=req.session.uuid)
 			{
-				app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+				app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/collection/"+result.rows[0].id},function(err,html){
 					if (err)
 					{
 						console.error(err)
@@ -198,7 +198,7 @@ router.get("/delalbum/:id",function(req,res){
 		}
 		if (result.rows[0].userid!=req.session.uuid)
 		{
-			app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+			app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/collection/"+result.rows[0].id},function(err,html){
 				if (err)
 				{
 					console.error(err)
@@ -225,7 +225,7 @@ router.get("/delalbum/:id",function(req,res){
 			}
 			if (result1.rows.length>0)
 			{
-				app.render("error",{msg:"这个图集不是空的，不能删除",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+				app.render("error",{msg:"这个图集不是空的，不能删除",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/collection/"+result.rows[0].id},function(err,html){
 					if (err)
 					{
 						console.error(err)
@@ -314,7 +314,7 @@ router.post("/newalbum_save",bodyparser.urlencoded({ extended: false }),function
 				{
 					if (result.rows[0].userid!=req.session.uuid)
 					{
-						app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+						app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/collection/"+result.rows[0].id},function(err,html){
 							if (err)
 							{
 								console.error(err)
@@ -338,7 +338,7 @@ router.post("/newalbum_save",bodyparser.urlencoded({ extended: false }),function
 									res.send(html)
 								})
 							}  else {
-								app.render("error",{msg:"操作成功，信息已修改",page:"图集"+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+								app.render("error",{msg:"操作成功，信息已修改",page:"图集"+result.rows[0].name,pageurl:"http://www.itsounds.cool/collection/"+result.rows[0].id},function(err,html){
 									if (err)
 									{
 										console.error(err)
@@ -482,7 +482,7 @@ router.get('/upload_album/:id',function(req,res){
 		}
 		if (result.rows[0].userid!=req.session.uuid)
 		{
-			app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/imagecollection/"+result.rows[0].id},function(err,html){
+			app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/collection/"+result.rows[0].id},function(err,html){
 				if (err)
 				{
 					console.error(err)
@@ -862,7 +862,7 @@ router.post("/caijigot",bodyparser.urlencoded({ extended: false }),function(req,
 			});
 		}
 		
-		app.render("error",{msg:"操作成功",page:"浏览图集",pageurl:"http://www.itsounds.cool/image/imagecollection/"+albumid},function(err,html){
+		app.render("error",{msg:"操作成功",page:"浏览图集",pageurl:"http://www.itsounds.cool/image/collection/"+albumid},function(err,html){
 			if (err)
 			{
 				console.error(err)
