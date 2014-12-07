@@ -17,6 +17,8 @@ var http=require("http")
 var router=express.Router();
 var app = express();
 var crypto=require("crypto")
+var dgram=require('dgram')
+var udpclient = dgram.createSocket("udp4");
 app.set('views', __dirname + '/views');
 app.engine('html', ejs.__express);
 app.set('view engine','html');
@@ -840,26 +842,26 @@ router.post("/caijigot",bodyparser.urlencoded({ extended: false }),function(req,
 			})
 			return
 		}
-	
-		var other=JSON.parse(obj.other);
-		var j=100;
-		if (j>obj.pics.length)
+		if (obj.other!=undefined) {
+			var other=JSON.parse(obj.other);
+		}
+		var hdarr=obj.pics.slice(0,100)
+		var total=0;
+		while (total*20<hdarr.length)
 		{
-			j=obj.pics.length;
-		}
-		for(var i=0;i<j;i++)
-		{	
-			if (downloadpic<200)
-			{
-				var tmp={}
-				tmp.url=url.parse(obj.pics[i]);
-				if (other.referer!=undefined || other.cookie!=undefined)
-				{
-					tmp.url.headers=other
-				}
-				handleDownload(tmp.url,albumid)
+			var nowhd={}
+			nowhd.album=albumid
+			if (obj.other!=undefined) {
+				nowhd.other=JSON.parse(obj.other);
 			}
+			nowhd.url=hdarr.slice(total*20,total*20+20)
+			total=total+1
+			var sstre=JSON.stringify(nowhd);
+			var sbuf=new Buffer(sstre)
+			udpclient.send(sbuf, 0, sbuf.length, 2000, "127.0.0.1", function(err, bytes) {
+			});
 		}
+		
 		app.render("error",{msg:"操作成功",page:"浏览图集",pageurl:"http://www.itsounds.cool/image/imagecollection/"+albumid},function(err,html){
 			if (err)
 			{
@@ -872,133 +874,238 @@ router.post("/caijigot",bodyparser.urlencoded({ extended: false }),function(req,
 	})
 })
 
-var downloadpic=0;
-function handleDownload(urlobj,albumid)
-{
-	var emmiter=new event.EventEmitter();
-	emmiter.on("start",function(urlobj){
-		if (downloadpic>200)
-		{
-			return;
-		}
-		downloadpic=downloadpic+1
-		http.get(urlobj,function(sres){
-			if(sres.statusCode==200)
-			{
-				var buffers=[]
-				var buflength=0;
-				var toolarge=false;
-				sres.on('data', function (chunk) {
-					buffers.push(chunk)
-					buflength+=chunk.length
-					if (buflength>1024*1024*20)
-					{
-						toolarge=true;
-						sres.end();
-					}
-				});
-				sres.on("end",function(){
-					if (!toolarge)
-					{
-						var buf=Buffer.concat(buffers)
-						console.error(buf)
-						emmiter.emit("checksize",buf)
-						if (downloadpic>0)
-						{
-							downloadpic=downloadpic-1;
-						}
-					}
-				})
-			} else
-			{
-				console.error("geting error");
-				if (downloadpic>0)
-				{
-					downloadpic=downloadpic-1;
-				}
-			}
-		}).on('error', function(e) {
-			console.error("Got error: " + e.message);
-			if (downloadpic>0)
-			{
-				downloadpic=downloadpic-1;
-			}
-		});
-	})
-	emmiter.on("checksize",function(buf){
-		try{
-			var size=sizeOf(buf)
-			if (size.type.toLowerCase()=="jpeg"||size.type.toLowerCase()=="jpg"||size.type.toLowerCase()=="bmp"||size.type.toLowerCase()=="png"||size.type.toLowerCase()=="gif")
-			{
-				if (size.width>100||size.height>100)
-				{
-					emmiter.emit("upload",buf,size)
-				}
-			}
-		}
-		catch (e)
-		{
-			console.error(e)
-		}
-	})
-	
-	emmiter.on("upload",function(buf,size){
-		var md5=crypto.createHash('md5')
-		md5.update(buf)
-		var md5result=md5.digest('hex')
-		var url="";
-		client.execute("select * from pic where size=? and md5=?",[buf.length,md5result],function(err,result){
+
+router.get("/collection/:id",function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	if (!result)
+	{
+		app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
 			if (err)
 			{
 				console.error(err)
+				res.send("发生了一些错误1")
 				return
 			}
-			if (result.rows.length<1)
+			res.send(html)
+		})
+		return 
+	}
+	client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		client.execute("select * from pic_album_item where album_id=? order by createtime desc limit 50;",[req.param('id')],function(err,result1){
+			if (err)
 			{
-				var tupload={}
-				tupload.buffer=buf
-				tupload.contentType="image/"+size.type
-				tupload.fileSuffix=size.type
-				tupload.is_Pic=true
-				upload.uploadBuffer(tupload,function(err,result1){
+				console.error(err)
+				app.render("error",{msg:"内部错误",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
 					if (err)
 					{
 						console.error(err)
-						return 
+						res.send("发生了一些错误1")
+						return
 					}
-					if (result1.status!=undefined && result1.status==200 && result1.objectUrl!=undefined)
-					{
-						client.execute("insert into pic (size,md5,url,uploadtime) values (?,?,?,?)",[buf.length,md5result,result1.objectUrl,Date.parse(new Date())/1000],function(err,result2){
-							if (err)
-							{
-								return 
-							}
-							client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[albumid,cql.types.Long.fromString(new Date().getTime().toString()),"","",md5result,buf.length,result1.objectUrl,uuid.v4()],function(err,result3){emmiter=null;})
-						})
-					} else
-					{
-						console.error(result1)
-						emmiter=null;
-					}
+					res.send(html)
 				})
-			} else
-			{
-				url=result.rows[0].url;
-				client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[albumid,cql.types.Long.fromString(new Date().getTime().toString()),"","",md5result,buf.length,url,uuid.v4()],function(err,result3){
-					emmiter=null;
-				})
+				return 
 			}
+			var min=0;
+			for(var i=0;i<result1.rows.length;i++)
+			{
+				if (i==0)
+				{
+					min=result1.rows[i].createtime
+				}
+				if (min>result1.rows[i].createtime)
+				{
+					min=result1.rows[i].createtime
+				}
+			}
+			app.render("image_collection",{album:result.rows[0],pics:result1.rows,min:min},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误1")
+					return
+				}
+				res.send(html)
+			})
 		})
 	})
-	
-	emmiter.on("error",function(e){
+})
+
+router.get("/collectionajax/:id/:timestamp",function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	var output={}
+	try {
+		var timestamp=cql.types.Long.fromString(req.param('timestamp'))
+	}
+	catch (e)
+	{
 		console.error(e)
+		output.fail="true"
+		res.send(output)
+		return 
+	}
+	if (!result)
+	{
+		output.fail="true"
+		res.send(output)
+		return 
+	}
+	client.execute("select * from pic_album_item where album_id=? and createtime<? order by createtime desc limit 50;",[req.param('id'),timestamp],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			output.fail="true"
+			res.send(output)
+			return 
+		}
+		output.fail="false"
+		output.data=[]
+		for(var i=0;i<result.rows.length;i++)
+		{
+			var item={}
+			item.createtime=result.rows[i].createtime.toNumber();
+			item.picid=result.rows[i].picid;
+			item.description=result.rows[i].description;
+			item.url=result.rows[i].url;
+			item.title=result.rows[i].title;
+			output.data.push(item)
+		}
+		res.send(output)
 	})
-	
-	
-	
-	emmiter.emit("start",urlobj)
-}
+})
+
+
+router.get("/pic/:id",function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	if (!result)
+	{
+		app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误1")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	client.execute("select * from pic_album_item where picid=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			app.render("error",{msg:"内部错误1",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误3")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		client.execute("select * from pic_album where id=?",[result.rows[0].album_id],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				app.render("error",{msg:"内部错误2",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误4")
+						return
+					}
+					res.send(html)
+				})
+				return 
+			}
+			client.execute("select * from pic_album_item where album_id=? and createtime<? order by createtime desc limit 5",[result.rows[0].album_id,result.rows[0].createtime],function(err,result2){
+				if (err)
+				{
+					console.error(err)
+					app.render("error",{msg:"内部错误3",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+						if (err)
+						{
+							console.error(err)
+							res.send("发生了一些错误5")
+							return
+						}
+						res.send(html)
+					})
+					return 
+				} 
+				client.execute("select * from pic_album_item where album_id=? and createtime>? order by createtime asc limit 5",[result.rows[0].album_id,result.rows[0].createtime],function(err,result3){
+					if (err)
+					{
+						console.error(err)
+						app.render("error",{msg:"内部错误4",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+							if (err)
+							{
+								console.error(err)
+								res.send("发生了一些错误6")
+								return
+							}
+							res.send(html)
+						})
+						return 
+					} 
+					app.render("picitem",{pic:result.rows[0],album:result1.rows[0],pichou:result2.rows,picqian:result3.rows},function(err,html){
+						if (err)
+						{
+							console.error(err)
+							res.send("发生了一些错误7")
+							return
+						}
+						res.send(html)
+					})
+				})
+			})
+		})
+	})
+})
 
 
 exports.router=router;

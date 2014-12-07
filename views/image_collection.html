@@ -1,0 +1,79 @@
+﻿<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+		<script src="http://www.itsounds.cool/public/masonry/masonry.pkgd.min.js"></script>
+		<script src="http://www.itsounds.cool/public/imageloaded/imagesloaded.pkgd.min.js"></script>
+	</head>
+	<body>
+		<div id="main" style="width:1000px;margin-left:auto;margin-right:auto">
+			<div id="top">
+				<div>图集名：<%= album.name %></div>
+				<div>描述：<%= album.description %></div>
+			</div>
+			<div id="container">
+				<% pics.forEach(function(pic){ %>
+					<div class="picitem">
+						<div>
+							<a href="http://www.itsounds.cool/image/pic/<%- pic.picid %>" target="_blank"><img src="<%= pic.url %>" width="180" alt="<%= pic.title %>" /></a>
+						</div>
+						<div>
+							<%= pic.title %><br />
+							<%= pic.description %>
+						</div>
+					</div>
+				<% }) %>
+			</div>
+			<div>
+				<button id="jzgd">加载更多</button>
+			</div>
+		</div>
+	</body>
+</html>
+<script>
+var min=<%= min %>;
+var $container = $('#container');
+var msnry;
+$container.imagesLoaded( function() {
+    msnry=$container.masonry({
+	    columnWidth: 200,
+	    itemSelector: '.picitem'
+	});
+});
+
+
+$("#jzgd").click(function(){
+	$.get("http://www.itsounds.cool/image/collectionajax/<%- album.id %>/"+min,function(result,status){
+		if (status!="success")
+		{
+			alert("网络错误，请重试")
+			return
+		}
+		var obj=result
+		if (obj.fail=="true")
+		{
+			alert("内部错误，请重试")
+			return
+		}
+		if (obj.data.length<1)
+		{
+			alert("已经全部加载完毕，没有更多图片了")
+			return
+		}
+		for (var i=0;i<obj.data.length;i++)
+		{
+			var str='<div class="picitem"><div><a href="http://www.itsounds.cool/image/pic/'+obj.data[i].picid+'" target="_blank"><img src="'+obj.data[i].url+'" width="180" alt="'+obj.data[i].title+'" /></a></div><div>'+obj.data[i].title+'<br />'+obj.data[i].description+'</div></div>';
+			if (obj.data[i].createtime<min)
+			{
+				min=obj.data[i].createtime;
+			}
+			var stra=$(str)
+			$container.append(stra)
+			$container.masonry("appended",stra)
+			stra.imagesLoaded(function(){
+				$container.masonry().layout();
+			})
+		}
+	})
+})
+</script>
