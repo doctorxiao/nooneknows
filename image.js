@@ -1092,7 +1092,7 @@ router.get("/pic/:id",function(req,res){
 						})
 						return 
 					} 
-					app.render("picitem",{pic:result.rows[0],album:result1.rows[0],pichou:result2.rows,picqian:result3.rows},function(err,html){
+					app.render("image_picitem",{pic:result.rows[0],album:result1.rows[0],pichou:result2.rows,picqian:result3.rows},function(err,html){
 						if (err)
 						{
 							console.error(err)
