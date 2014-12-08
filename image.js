@@ -1162,7 +1162,7 @@ router.get("/delpic/:picid",function(req,res){
 	})
 })
 
-router.get("/editpic/:picid",function(req,res){
+router.post("/editpic/:picid",function(req,res){
 	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
 	var result=re.test(req.param('picid'));
 	if (!result)
@@ -1215,6 +1215,71 @@ router.get("/editpic/:picid",function(req,res){
 				return 
 			}
 			client.execute("update pic_album_item set title=?,description=? where album_id=? and createtime=? and md5=?",[title,description,result.rows[0].album_id,result.rows[0].createtime,result.rows[0].md5],function(err,result2){
+				if (err)
+				{
+					console.error(err)
+					res.send("bad")
+					return 
+				}
+				res.send("ok")
+			})
+		})
+	})
+})
+
+router.get("/fengmian/:picid",function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('picid'));
+	if (!result)
+	{
+		res.send("bad")
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("bad")
+		return 
+	}
+	var title="";
+	var desc="";
+	try{
+		title=req.body.title
+		desc=req.body.desc
+	}
+	catch (e)
+	{
+		console.error(e)
+	}
+	client.execute("select * from pic_album_item where picid=?",[req.param('picid')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res.send("bad")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("bad")
+			return 
+		}
+		client.execute("select * from pic_album where id=?",[result.rows[0].album_id],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				res.send("bad")
+				return 
+			}
+			if (result1.rows.length<1)
+			{
+				res.send("bad")
+				return 
+			}
+			if (result1.rows[0].userid!=req.session.uuid)
+			{
+				res.send("bad")
+				return 
+			}
+			client.execute("update pic_album set front+=? where id=?",[result.rows[0].url,result.rows[0].album_id],function(err,result2){
 				if (err)
 				{
 					console.error(err)
