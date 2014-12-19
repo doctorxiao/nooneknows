@@ -50,34 +50,28 @@ loginevents.on("weiboaccesstokengot",function(req,res,access_token,method){
 })
 
 loginevents.on("loginuidgot",function(req,res,uid,source,name,email,photo,access_token){
-	client.execute("select * from source where uid=? and site=? ;",[uid,source],function(err,result){
+	client.execute("select * from users where source=?",[uid.toString()+"@"+source],function(err,result){
 		if (err){
+			console.error(err)
 			res.send("内部错误，请重试2");
 			return ;
 		}
+		var uuidtmp=uuid.v4()
 		if (result.rows.length==0)
 		{
-			var uuidtmp=uuid.v4()
-			client.execute("insert into users (userid,username,email,photo,createtime) values(?,?,?,?,?)",[uuidtmp,name,email,photo,Date.parse(new Date())],function(insert_user_err,insert_user_result){
+			client.execute("insert into users (userid,username,email,photo,createtime,source) values(?,?,?,?,?,?)",[uuidtmp,name+"@"+source,email,photo,Date.parse(new Date()),uid.toString()+"@"+source],function(insert_user_err,insert_user_result){
 				if (insert_user_err)
 				{
 					res.send("内部错误，请重试3");
 					return ;
 				}
-				req.session.uuid=uuidtmp
+				req.session.uuid=uuidtmp;
 				if (req.session.token==undefined)
 				{
 					req.session.token=[]
 				}
-				req.session.token[source]=access_token
-				client.execute("insert into source (uid,site,userid,access_token) values (?,?,?,?)",[uid,source,uuidtmp,access_token],function(insert_source_err,insert_source_result){
-					if (insert_source_err)
-					{
-						res.send("内部错误，请重试4");
-						return ;
-					}
-					res.redirect('http://www.itsounds.cool/userpanel/index');
-				})
+				req.session.token[source]=access_token;
+				res.redirect('http://www.itsounds.cool/userpanel/index');
 			})
 		} else
 		{
@@ -89,7 +83,7 @@ loginevents.on("loginuidgot",function(req,res,uid,source,name,email,photo,access
 			req.session.token[source]=access_token;
 			res.redirect('http://www.itsounds.cool/userpanel/index');
 		}
-	})				
+	})
 })
 
 loginevents.on("binduidgot",function(req,res,uid,source,name,email,photo,access_token){
@@ -204,7 +198,7 @@ router.get("/renrenlogin",function(req,res){
 				}
 				if (a.access_token!=undefined)
 				{
-				    loginevents.emit("loginuidgot",req,res,a.user.id.toString(),"renren",a.user.name,"",a.user.avatar[1].url,a.access_token)
+				    loginevents.emit("loginuidgot",req,res,a.user.id.toString(),"renren",a.user.name,"",a.user.avatar[0].url,a.access_token)
 				}
 			})
 		})

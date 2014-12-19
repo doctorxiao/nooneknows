@@ -5,6 +5,12 @@ var cql = require('node-cassandra-cql');
 var client = new cql.Client({hosts: ['108.61.218.214', '108.61.218.220'], keyspace: 'site',username:'xx',password:"xx123456&*("});
 var router=express.Router();
 var app = express();
+var fs = require('fs');
+var bodyparser=require("body-parser")
+var multiparty = require('multiparty')
+var upload=require("./upload.js");
+app.use(bodyparser.urlencoded({ extended: false }))
+app.use(bodyparser.json())
 app.use(session({secret: 'this is it sounds cool', resave:true, saveUninitialized :true }));
 
 router.get("/index",function(req,res){
@@ -13,19 +19,19 @@ router.get("/index",function(req,res){
 		res.send("您还木有登录，请去<a href=\"http://www.itsounds.cool/login\">登录</a>")
 		return ;
 	}
-	client.execute("select * from source where userid=? ;",[req.session.uuid],function(err,result){
+	client.execute("select * from users where userid=? ;",[req.session.uuid],function(err,result){
 		if (err){
 			res.send("发生了一些错误，请重试");
 			return ;
 		}
-		var str="<p>登录成功！您已绑定账号：</p>"
-		for(var i=0;i<result.rows.length;i++)
+		if (result.rows.length>0) {
+			var str="<p>登录成功！</p>";
+			res.send(str)
+		} else
 		{
-			str+="<p>"+result.rows[i].uid+"   @"+result.rows[i].site+"</p>"
+			var str="<p>登录失败！</p>"
+			res.send(str)
 		}
-		str+="<p>下面您可以继续绑定其他账号<p>"
-		str+="<p><a href=\"http://www.itsounds.cool/bind\">点击这里绑定其他帐号</a></p>"
-		res.send(str)
 	})
 })
 
