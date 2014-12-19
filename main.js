@@ -40,7 +40,7 @@ app.use("/image",image.router);
 
 app.get('/login', function(req, res){
 	var str='<a href="https://graph.renren.com/oauth/authorize?client_id=0d84eb06e9304cd6ad5d56bbc5a4c76e&redirect_uri=http://www.itsounds.cool/loginback/renrenlogin&response_type=code">从人人登录</a>';
-	str+='<br><a href="https://api.weibo.com/oauth2/authorize?client_id=864293699&response_type=code&redirect_uri=http://www.itsounds.cool/loginback/weibologin">从微博登录</a>';
+	//str+='<br><a href="https://api.weibo.com/oauth2/authorize?client_id=864293699&response_type=code&redirect_uri=http://www.itsounds.cool/loginback/weibologin">从微博登录</a>';
 	res.send(str);
 });
 
