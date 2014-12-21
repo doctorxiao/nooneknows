@@ -1,0 +1,29 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row clearfix">
+				<div class="col-md-4 column">
+					<h3><%= group.name %></h3>
+					<p><%= group.description %></p>
+					<p><img src="<%= group.photo %>" style="width:100%"/></p>
+					<p>
+					<% catas.forEach(function(cata){ %>
+						<p><%= cata.name %></p>
+					<% }) %>
+					</p>
+					<p>
+						<button type="button" data-toggle="modal" data-target="#myModal">修改</button>
+					</p>
+				</div>
+				<div class="col-md-4 column">
+				</div>
+				<div class="col-md-4 column">
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
