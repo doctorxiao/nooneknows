@@ -115,7 +115,7 @@ router.post("/newgroupsave",bodyparser.urlencoded({ extended: false }),function(
 			})
 			return 
 		}
-		client.execute("insert into group (id,name,public,createtime,owner) values (?,?,?,?,?)",[groupuuid,name,freejoin,Date.parse(new Date())/1000,req.session.uuid],function(err,result2){
+		client.execute("insert into group (id,name,public,createtime,owner,description) values (?,?,?,?,?,?)",[groupuuid,name,freejoin,Date.parse(new Date())/1000,req.session.uuid,""],function(err,result2){
 			if (err)
 			{
 				console.error(err)
@@ -191,5 +191,120 @@ router.get("/i/:id",function(req,res){
 	})
 })
 
+router.post("/modigroupsave/:id",bodyparser.urlencoded({ extended: false }),function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您没有登录，不能创建新的社群",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误1")
+				return
+				}
+			res.send(html)
+		})
+		return 
+	}
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			app.render("error",{msg:"发生内部错误",page:"上一页",pageurl:"javascript:history.go(-1)"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+					}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误，没有这个社群",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误3")
+					return
+					}
+				res.send(html)
+			})
+			return 
+		}
+		
+		if (result.rows[0].owner!=req.session.uuid)
+		{
+			app.render("error",{msg:"这不是您的社群，无权修改",page:"社群"+result.rows[0].name,pageurl:"http://www.itsounds.cool/group/i/"+result.rows[0].id},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误3")
+					return
+					}
+				res.send(html)
+			})
+			return 
+		}
+		var name="";
+		var freejoin=0;
+		var desc="";
+		var photo=result.rows[0].photo;
+		try
+		{
+			name=req.body.group_name.replace(/(^\s*)|(\s*$)/g,"");
+			if (req.body.freejoin!=undefined)
+			{
+				freejoin=1;
+			}
+			desc=req.body.group_desc.replace(/(^\s*)|(\s*$)/g,"");
+			photo=req.body.modi_pic_url.replace(/(^\s*)|(\s*$)/g,"")
+		}
+		catch (e)
+		{
+		
+		}
+		if (photo.length==0)
+		{
+			photo=result.rows[0].photo;
+		}
+		if (name.length<1)
+		{
+			app.render("error",{msg:"新的社群名字不能为空",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+					}
+				res.send(html)
+			})
+			return 
+		}
+		if (name.length>30)
+		{
+			app.render("error",{msg:"新的社群名字不能太长",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误3")
+					return
+					}
+				res.send(html)
+			})
+			return 
+		}
+		client.execute("update group set name=?,description=?,photo=?,public=? where id=?",[name,desc,photo,freejoin,result.rows[0].id],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+			}
+			res.redirect("/group/i/"+result.rows[0].id);
+		})
+	})
+	
+	
+})
 
 exports.router=router;

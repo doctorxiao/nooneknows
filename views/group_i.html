@@ -16,7 +16,7 @@
 					<% }) %>
 					</p>
 					<p>
-						<button type="button" data-toggle="modal" data-target="#myModal">修改</button>
+						<button type="button" data-toggle="modal" data-target="#modiGroup">修改</button>
 					</p>
 				</div>
 				<div class="col-md-4 column">
@@ -25,5 +25,57 @@
 				</div>
 			</div>
 		</div>
+		<div class="modal fade" id="modiGroup">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+						<h4 class="modal-title">修改社群信息</h4>
+					</div>
+					<div class="modal-body">
+						<form action="/group/modigroupsave/<%= group.id %>" method="POST" target="_self" id="modigroupsave">
+							<p>社群的名字：</p>
+							<p><input type="text" name="group_name" value="<%= group.name %>" id="group_name"/></p>
+							<p>社群简介：</p>
+							<p><textarea name="group_desc"><%= group.description %></textarea></p>
+							<p>社群图片URL：(<a href="http://www.itsounds.cool/picbed/upload" target="_blank">图床</a>)</p>
+							<p>
+								<input type="text" name="modi_pic_url" value="<%= group.photo %>" id="modi_pic_url"/></p>
+							</p>
+							<% if (group.public) { %>
+							<p><input type="checkbox" name="freejoin" value="1" id="freejoin" checked="checked"> 允许自由加入</p>
+							<% } else { %>
+							<p><input type="checkbox" name="freejoin" value="1" id="freejoin"> 允许自由加入</p>
+							<% } %>
+							<% catas.forEach(function(cata){ %>
+								<p><%= cata.name %></p>
+							<% }) %>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+						<button type="button" class="btn btn-primary" id="modigroupok">保存</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div>
 	</body>
 </html>
+<script>
+	$("#modigroupok").click(function(){
+		var groupname=$("#group_name").val()
+		groupname=groupname.replace(/(^\s*)|(\s*$)/g,"");
+		if(groupname.length==0)
+		{
+			alert("请输入社群的名字");
+		} else
+		{
+			if(groupname.length>30){
+				alert("社群的名字不能太长");
+			} else
+			{
+				$("#modigroupsave").submit();
+			}
+		}
+	})
+</script>
