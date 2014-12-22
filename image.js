@@ -43,6 +43,7 @@ router.get("/newalbum",function(req,res){
 		obj.name=""
 		obj.description=""
 		obj.description="0"
+		obj.id=""
 		app.render("image_newablum",{album:obj},function(err,html){
 			if (err)
 			{
@@ -54,7 +55,6 @@ router.get("/newalbum",function(req,res){
 		})
 	}
 })
-
 
 router.get("/modifyalbum/:id",function(req,res){
 	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
@@ -138,7 +138,6 @@ router.get("/modifyalbum/:id",function(req,res){
 		})
 	}
 })
-
 
 router.get("/delalbum/:id",function(req,res){
 	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
@@ -874,7 +873,6 @@ router.post("/caijigot",bodyparser.urlencoded({ extended: false }),function(req,
 	})
 })
 
-
 router.get("/collection/:id",function(req,res){
 	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
 	var result=re.test(req.param('id'));
@@ -1001,7 +999,6 @@ router.get("/collectionajax/:id/:timestamp",function(req,res){
 		res.send(output)
 	})
 })
-
 
 router.get("/pic/:id",function(req,res){
 	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
@@ -1288,6 +1285,126 @@ router.get("/fengmian/:picid",function(req,res){
 				}
 				res.send("ok")
 			})
+		})
+	})
+})
+
+router.get("/gettalk/:picid/:timestamp",function(req,res){
+	client.execute("select * from pic_talk where picid=? and talktime<? order by talktime desc limit 10;",[req.param("picid"),cql.types.Long.fromString(req.param("timestamp"))],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res.send("error")
+			return 
+		} else
+		{
+			var re=[];
+			for(var i=0;i<result.rows.length;i++)
+			{
+				var rei={}
+				rei.nr=result.rows[i].nr;
+				rei.userid=result.rows[i].userid;
+				rei.username=result.rows[i].username;
+				rei.userphoto=result.rows[i].userphoto;
+				rei.talktime=result.rows[i].talktime.toString();
+				re.push(rei)
+			}
+			res.send(re);
+		}
+	})
+})
+
+router.post("/talksave/:picid",bodyparser.urlencoded({ extended: false }),function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('picid'));
+	if (!result)
+	{
+		app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误1")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您没有登录，不能评论",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.body.talknr==undefined || req.body.talknr.length==0)
+	{
+		app.render("error",{msg:"评论内容不能为空",page:"cool图",pageurl:"http://www.itsounds.cool/image/pic/"+req.param('picid')},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误3")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	client.execute("select * from users where userid=?",[req.session.uuid],function(err,result){
+		if (err)
+		{
+			app.render("error",{msg:"内部错误1",page:"cool图",pageurl:"http://www.itsounds.cool/image/pic/"+req.param('picid')},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误4")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"您还没有登录，不能评论",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误5")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		var dt=new Date();
+		var milisec=dt.getMilliseconds().toString();
+		if (milisec.length==2)
+		{
+			milisec="0"+milisec;
+		}
+		client.execute("insert into pic_talk (nr,picid,talktime,userid,username,userphoto) values (?,?,?,?,?,?)",[req.body.talknr,req.param('picid'),cql.types.Long.fromString((Date.parse(dt)/1000).toString()+milisec),req.session.uuid,result.rows[0].username,result.rows[0].photo],function(err,result1){
+			if (err)
+			{
+				console.error(err);
+				app.render("error",{msg:"内部错误2",page:"cool图",pageurl:"http://www.itsounds.cool/image/pic/"+req.param('picid')},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误5")
+						return
+					}
+					res.send(html)
+				})
+				return 
+			}
+			res.redirect("/image/pic/"+req.param('picid'))
 		})
 	})
 })

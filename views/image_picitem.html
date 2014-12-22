@@ -1,0 +1,74 @@
+﻿<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+	</head>
+	<body>
+		<div>
+			<div>图片标题<%= pic.title %></div>
+			<div>图片介绍<%= pic.description %></div>
+			<div><a href="http://www.itsounds.cool/image/collection/<%= album.id %>" target="_blank">所属图集：<%= album.name %></a></div>
+			<div><img src="<%= pic.url %>" alt="<%= pic.title %>" /></div>
+			<div>
+				<form action="/image/talksave/<%= pic.picid %>" method="POST" target="_self">
+					<textarea name="talknr"></textarea>
+					<input type="submit" value="提交评论" class="btn btn-sm" />
+				</form>
+			</div>
+			<div id="pl"></div>
+			<input type="button" class="btn btn-sm" value="加载更多评论" id="getmoretalk"/>
+		</div>
+		<div>
+			<% for (var i=picqian.length;i>0;i--) { %>
+			<div><a href="http://www.itsounds.cool/image/pic/<%= picqian[i-1].picid %>"><img src="<%= picqian[i-1].url %>" alt="<%= picqian[i-1].title %>" width="100" height="100"/></a></div>
+			<% } %>
+			<div><img src="<%= pic.url %>" alt="<%= pic.title %>" width="100" height="100"/></div>
+			<% for (var i=0;i<pichou.length;i++) { %>
+			<div><a href="http://www.itsounds.cool/image/pic/<%= pichou[i].picid %>"><img src="<%= pichou[i].url %>" alt="<%= pichou[i].title %>" width="100" height="100"/></a></div>
+			<% } %>
+		</div>
+	</body>
+</html>
+<script>
+	var picid='<%= pic.picid %>';
+	var dt=new Date();
+	var mindt=(Date.parse(dt)/1000)+3600*24*365;
+	alert(mindt);
+	mindt=mindt*1000;
+	$.get("/image/gettalk/"+picid+"/"+mindt,function(res,status){
+		if (status=="success")
+		{
+			if (res!="error")
+			{
+				for(var i=0;i<res.length;i++)
+				{
+					if (res[i].talktime<mindt)
+					{
+						mindt=res[i].talktime
+					}
+					var str="<div><img src=\""+res[i].userphoto+"\" width=30 height=30 />"+res[i].username+"说<br />"+res[i].nr+"</div>"
+					$("#pl").append(str)
+				}
+			}
+		}
+	});
+	$("#getmoretalk").click(function(){
+		$.get("/image/gettalk/"+picid+"/"+mindt,function(res,status){
+			if (status=="success")
+			{
+				if (res!="error")
+				{
+					for(var i=0;i<res.length;i++)
+					{
+						if (res[i].talktime<mindt)
+						{
+							mindt=res[i].talktime
+						}
+						var str="<div><img src=\""+res[i].userphoto+"\" width=30 height=30 />"+res[i].username+"说<br />"+res[i].nr+"</div>"
+						$("#pl").append(str)
+					}
+				}
+			}
+		});
+	})
+</script>
