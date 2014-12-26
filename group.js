@@ -307,4 +307,157 @@ router.post("/modigroupsave/:id",bodyparser.urlencoded({ extended: false }),func
 	
 })
 
+router.post("/newcata/:id",bodyparser.urlencoded({ extended: false }),function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("not logined");
+		return 
+	}
+	if (req.body.name==undefined || req.body.name.replace(/(^\s*)|(\s*$)/g,"").length<1)
+	{
+		res.send("name not good");
+		return 
+	}
+	if (req.body.name.replace(/(^\s*)|(\s*$)/g,"").length>20)
+	{
+		res.send("name too long");
+	}
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res,send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("param err")
+			return 
+		}
+		
+		if (result.rows[0].owner!=req.session.uuid)
+		{
+			res.send("not owner")
+			return 
+		}
+		var uid=uuid.v4();
+		client.execute("insert into group_cata (id,createtime,groupid,is_primary,name) values (?,?,?,?,?)",[uid,Date.parse(new Date())/1000,result.rows[0].id,0,req.body.name.replace(/(^\s*)|(\s*$)/g,"")],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				res.send("internal err2")
+				return 
+			}
+			res.send("ok"+uid);
+		})
+	})
+})
+
+router.get("/delcata/:id/:cata",function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("not logined");
+		return 
+	}
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res,send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("param err")
+			return 
+		}
+		
+		if (result.rows[0].owner!=req.session.uuid)
+		{
+			res.send("not owner")
+			return 
+		}
+		client.execute("select * from group_cata where id=?",[req.param('cata')],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				res.send("internal err2")
+				return 
+			}
+			if (result1.rows.length<1 || result1.rows[0].groupid!=req.param('id') || result1.rows[0].is_primary==1)
+			{
+				res.send("param err2")
+				return 
+			}
+			client.execute("delete from group_cata where id=?",[req.param('cata')],function(err,result2){
+				if (err)
+				{
+					console.error(err)
+					res.send("internal err3")
+					return 
+				}
+				res.send("ok")
+			})
+		})
+	})
+})
+
+router.post("/modicata/:id/:cata",bodyparser.urlencoded({ extended: false }),function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("not logined");
+		return 
+	}
+	if (req.body.name==undefined || req.body.name.replace(/(^\s*)|(\s*$)/g,"").length<1)
+	{
+		res.send("name not good");
+		return 
+	}
+	if (req.body.name.replace(/(^\s*)|(\s*$)/g,"").length>20)
+	{
+		res.send("name too long");
+	}
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res,send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("param err")
+			return 
+		}
+		
+		if (result.rows[0].owner!=req.session.uuid)
+		{
+			res.send("not owner")
+			return 
+		}
+		client.execute("select * from group_cata where id=?",[req.param('cata')],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				res.send("internal err2")
+				return 
+			}
+			if (result1.rows.length<1 || result1.rows[0].groupid!=req.param('id') || result1.rows[0].is_primary==1)
+			{
+				res.send("param err2")
+				return 
+			}
+			client.execute("update group_cata set name=? where id=?",[req.body.name.replace(/(^\s*)|(\s*$)/g,""),req.param('cata')],function(err,result2){
+				if (err)
+				{
+					console.error(err)
+					res.send("internal err3")
+					return 
+				}
+				res.send("ok")
+			})
+		})
+	})
+})
+
 exports.router=router;

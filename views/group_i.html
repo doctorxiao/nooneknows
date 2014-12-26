@@ -6,22 +6,39 @@
 	<body>
 		<div class="container">
 			<div class="row clearfix">
-				<div class="col-md-4 column">
+				<div class="col-md-2 column">
 					<h3><%= group.name %></h3>
-					<p><%= group.description %></p>
-					<p><img src="<%= group.photo %>" style="width:100%"/></p>
-					<p>
-					<% catas.forEach(function(cata){ %>
-						<p><%= cata.name %></p>
-					<% }) %>
-					</p>
 					<p>
 						<button type="button" data-toggle="modal" data-target="#modiGroup">修改</button>
 					</p>
+					<p><%= group.description %></p>
+					<p><img src="<%= group.photo %>" style="width:100%"/></p>
+					<div id="allcatas">
+					<% catas.forEach(function(cata){ %>
+						<div id="catablock<%= cata.id %>">
+							<div class="catashow">
+								<p><span class="catanameshow"><%= cata.name %></span>
+									<input type="button" value="修改" class="modi_cata_button" />
+									<input type="button" value="删除" class="del_cata_button" />
+								</p>
+							</div>
+							<div class="catamodi" style="display:none">
+								<input type="text" value="" class="modi_cata_textbox" />
+								<input type="button" value="确定" class="modi_cata_submit" />
+								<input type="button" value="取消" class="modi_cata_cancle" />
+							</div>
+						</div>
+					<% }) %>
+					</div>
+					<div>
+						<input type="button" id="createnewcatabutton" value="创建新类别" />
+						<input type="text" id="createnewcatatextbox" value="" style="display:none;"/>
+						<input type="button" id="createnewcatasubmit" value="创建" style="display:none;"/>
+					</div>
 				</div>
-				<div class="col-md-4 column">
+				<div class="col-md-5 column">
 				</div>
-				<div class="col-md-4 column">
+				<div class="col-md-5 column">
 				</div>
 			</div>
 		</div>
@@ -47,9 +64,7 @@
 							<% } else { %>
 							<p><input type="checkbox" name="freejoin" value="1" id="freejoin"> 允许自由加入</p>
 							<% } %>
-							<% catas.forEach(function(cata){ %>
-								<p><%= cata.name %></p>
-							<% }) %>
+							
 						</form>
 					</div>
 					<div class="modal-footer">
@@ -62,6 +77,7 @@
 	</body>
 </html>
 <script>
+	var groupid='<%= group.id %>';
 	$("#modigroupok").click(function(){
 		var groupname=$("#group_name").val()
 		groupname=groupname.replace(/(^\s*)|(\s*$)/g,"");
@@ -78,4 +94,76 @@
 			}
 		}
 	})
+	
+	
+	$("#createnewcatabutton").on('click',function(){
+		document.getElementById("createnewcatabutton").style.display="none";
+		document.getElementById("createnewcatatextbox").style.display="block";
+		document.getElementById("createnewcatasubmit").style.display="block";
+	})
+	$("#createnewcatasubmit").on("click",function(){
+		var s=$("#createnewcatatextbox").val();
+		s=s.replace(/(^\s*)|(\s*$)/g,"");
+		if (s.length>0 && s.length<20)
+		{
+			$.post("/group/newcata/"+groupid,{name:s},function(data,status){
+				if (status=="success")
+				{
+					if (data.length>2 && data.substr(0,2)=="ok")
+					{
+						document.getElementById("createnewcatabutton").style.display="block";
+						document.getElementById("createnewcatatextbox").style.display="none";
+						document.getElementById("createnewcatasubmit").style.display="none";
+						$("#allcatas").append('<div id="catablock'+data.substr(2)+'"><div class="catashow"><p><span class="catanameshow">'+s+'</span><input type="button" value="修改" class="modi_cata_button" /><input type="button" value="删除" class="del_cata_button" /></p></div><div class="catamodi" style="display:none"><input type="text" value="" class="modi_cata_textbox" /><input type="button" value="确定" class="modi_cata_submit" /><input type="button" value="取消" class="modi_cata_cancle" /></div></div>')
+					}
+				}
+			})
+		}
+	})
+	
+	$("#allcatas").delegate(".del_cata_button","click",function(){
+		var item=$(this).parent().parent().parent()
+		var s=item.attr("id").substr(9)
+		$.get("/group/delcata/"+groupid+"/"+s,function(data,status){
+			if (status=="success")
+			{
+				if (data=="ok")
+				{
+					item.remove();
+				}
+			}
+		})
+	})
+	
+	$("#allcatas").delegate(".modi_cata_button","click",function(){
+		$(this).parent().parent()[0].style.display="none";
+		$(this).parent().parent().parent().children(".catamodi")[0].style.display="block";
+	})
+	
+	
+	$("#allcatas").delegate(".modi_cata_cancle","click",function(){
+		$(this).parent()[0].style.display="none";
+		$(this).parent().parent().children(".catashow")[0].style.display="block";
+	})
+	
+	$("#allcatas").delegate(".modi_cata_submit","click",function(){
+		var tmp=$(this)
+		var name=$($(this).parent().children(".modi_cata_textbox")[0]).val();
+		name=name.replace(/(^\s*)|(\s*$)/g,"")
+		var cataid=$($(this).parent().parent()[0]).attr("id").substr(9);
+		if (name.length>0 && name.length<20) {
+			$.post("/group/modicata/"+groupid+"/"+cataid,{name:name},function(data,status){
+				if (status=="success")
+				{
+					if (data=="ok")
+					{
+						$($(tmp.parent().parent()[0]).find(".catanameshow")[0]).html(name);
+						tmp.parent()[0].style.display="none";
+						tmp.parent().parent().children(".catashow")[0].style.display="block";
+					}
+				}
+			})
+		}
+	})
+	
 </script>
