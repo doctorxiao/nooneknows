@@ -1159,7 +1159,7 @@ router.get("/delpic/:picid",function(req,res){
 	})
 })
 
-router.post("/editpic/:picid",function(req,res){
+router.post("/editpic/:picid",bodyparser.urlencoded({ extended: false }),function(req,res){
 	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
 	var result=re.test(req.param('picid'));
 	if (!result)
@@ -1198,24 +1198,24 @@ router.post("/editpic/:picid",function(req,res){
 			if (err)
 			{
 				console.error(err)
-				res.send("bad")
+				res.send("internal err1")
 				return 
 			}
 			if (result1.rows.length<1)
 			{
-				res.send("bad")
+				res.send("param err1")
 				return 
 			}
 			if (result1.rows[0].userid!=req.session.uuid)
 			{
-				res.send("bad")
+				res.send("not owner")
 				return 
 			}
-			client.execute("update pic_album_item set title=?,description=? where album_id=? and createtime=? and md5=?",[title,description,result.rows[0].album_id,result.rows[0].createtime,result.rows[0].md5],function(err,result2){
+			client.execute("update pic_album_item set title=?,description=? where album_id=? and createtime=? and md5=?",[title,desc,result.rows[0].album_id,result.rows[0].createtime,result.rows[0].md5],function(err,result2){
 				if (err)
 				{
 					console.error(err)
-					res.send("bad")
+					res.send("internal err2")
 					return 
 				}
 				res.send("ok")

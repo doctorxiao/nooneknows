@@ -7,6 +7,7 @@
 		<div>
 			<div>图片标题<%= pic.title %></div>
 			<div>图片介绍<%= pic.description %></div>
+			<button type="button" data-toggle="modal" data-target="#editpic">修改</button>
 			<div><a href="http://www.itsounds.cool/image/collection/<%= album.id %>" target="_blank">所属图集：<%= album.name %></a></div>
 			<div><img src="<%= pic.url %>" alt="<%= pic.title %>" /></div>
 			<div>
@@ -27,13 +28,32 @@
 			<div><a href="http://www.itsounds.cool/image/pic/<%= pichou[i].picid %>"><img src="<%= pichou[i].url %>" alt="<%= pichou[i].title %>" width="100" height="100"/></a></div>
 			<% } %>
 		</div>
+		<div class="modal fade" id="editpic">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+						<h4 class="modal-title">修改图片信息</h4>
+					</div>
+					<div class="modal-body">
+							<p>图片标题：</p>
+							<p><input type="text" value="<%= pic.title %>" id="edit_pic_title"/></p>
+							<p>图片简介：</p>
+							<p><textarea id="edit_pic_desc"><%= pic.description %></textarea></p>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+						<button type="button" class="btn btn-primary" id="editok">保存</button>
+					</div>
+				</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div>
 	</body>
 </html>
 <script>
 	var picid='<%= pic.picid %>';
 	var dt=new Date();
 	var mindt=(Date.parse(dt)/1000)+3600*24*365;
-	alert(mindt);
 	mindt=mindt*1000;
 	$.get("/image/gettalk/"+picid+"/"+mindt,function(res,status){
 		if (status=="success")
@@ -70,5 +90,18 @@
 				}
 			}
 		});
+	})
+	
+	$("#editok").click(function(){
+		var title=$("#edit_pic_title").val()
+		var desc=$("#edit_pic_desc").val()
+		$.post("/image/editpic/"+picid,{title:title,desc:desc},function(data,status){
+			if (status=="success" && data=="ok")
+			{
+				location.reload()
+				return 
+			}
+			alert("操作失败，请重试\n\n原因可能为：未登录、权限不足、参数错误、输入信息有误");
+		})
 	})
 </script>
