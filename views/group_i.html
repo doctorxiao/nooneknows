@@ -6,7 +6,7 @@
 	<body>
 		<div class="container">
 			<div class="row clearfix">
-				<div class="col-md-2 column">
+				<div class="col-md-3 column">
 					<h3><%= group.name %></h3>
 					<p>
 						<button type="button" data-toggle="modal" data-target="#modiGroup">修改</button>
@@ -36,9 +36,55 @@
 						<input type="button" id="createnewcatasubmit" value="创建" style="display:none;"/>
 					</div>
 				</div>
-				<div class="col-md-5 column">
-				</div>
-				<div class="col-md-5 column">
+				<div class="col-md-9 column">
+					<div id="midtop">
+						<div id="postnrpanel" style="display:none">
+							<div class="tabbable" id="tabs-373083">
+								<ul class="nav nav-tabs">
+									<li>
+										<a href="#panel-405514" data-toggle="tab">发文字</a>
+									</li>
+									<li class="active">
+										<a href="#panel-847916" data-toggle="tab">发链接</a>
+									</li>
+									<li class="active">
+										<a href="#panel-848616" data-toggle="tab">发图片</a>
+									</li>
+									<li class="active">
+										<a href="#panel-841356" data-toggle="tab">发视频</a>
+									</li>
+								</ul>
+								<div class="tab-content">
+									<div class="tab-pane" id="panel-405514">
+										<p>
+											I'm in Section 1.
+										</p>
+									</div>
+									<div class="tab-pane" id="panel-847916">
+										<p>
+											Howdy, I'm in Section 2.
+										</p>
+									</div>
+									<div class="tab-pane" id="panel-848616">
+										<p>
+											Howdy, I'm in Section 3.
+										</p>
+									</div>
+									<div class="tab-pane" id="panel-841356">
+										<p>
+											Howdy, I'm in Section 4.
+										</p>
+									</div>
+								</div>
+							</div>
+						</div>
+						<% if (member==1) { %>
+						<div id="applyjoinpanel">已经申请加入该社群，待批准</div>
+						<% } %>
+						<% if (member==0) { %>
+						<div id="applyjoinpanel"><input type="button" value="申请加入该社群" id="applyjoinbutton" class="btn"/></div>
+						<% } %>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -78,6 +124,11 @@
 </html>
 <script>
 	var groupid='<%= group.id %>';
+	var member=<%= member %>
+	if (member>1)
+	{
+		document.getElementById("postnrpanel").style.display="block";
+	}
 	$("#modigroupok").click(function(){
 		var groupname=$("#group_name").val()
 		groupname=groupname.replace(/(^\s*)|(\s*$)/g,"");
@@ -164,6 +215,30 @@
 				}
 			})
 		}
+	})
+	
+	$("#applyjoinbutton").on('click',function(){
+		$.get("/group/applyjoin/"+groupid,function(data,status){
+			if (status!="success")
+			{
+				alert("通信故障，请重试")
+			} else
+			{
+				if (data.indexOf("internal")>-1)
+				{
+					alert("内部错误")
+				}
+				if (data.indexOf("joined")>-1)
+				{
+					document.getElementById("postnrpanel").style.display="block";
+					$("#applyjoinpanel").css("display","none");
+				}
+				if (data.indexOf("applied")>-1)
+				{
+					$("#applyjoinpanel").html("已经申请加入该社群，待批准");
+				}
+			}
+		})
 	})
 	
 </script>
