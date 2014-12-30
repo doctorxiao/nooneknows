@@ -460,4 +460,109 @@ router.post("/modicata/:id/:cata",bodyparser.urlencoded({ extended: false }),fun
 	})
 })
 
+router.post("/posttext/:id/:cata",bodyparser.urlencoded({ extended: false }),function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("not logined");
+		return 
+	}
+	if (req.body.nr==undefined || req.body.nr.replace(/(^\s*)|(\s*$)/g,"").length<1)
+	{
+		res.send("empty");
+		return 
+	}
+	if (req.body.name.replace(/(^\s*)|(\s*$)/g,"").length>20000)
+	{
+		res.send("nr too long");
+	}
+	client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result1){
+		if (err)
+		{
+			console.error(err)
+			res.send("internal err1")
+			return 
+		}
+		if (result1.rows.length<1 || result1.rows[0].type<2)
+		{
+			res.send("not member")
+			return 
+		}
+		client.execute("select * from group_cata where id=?",[req.param("cata")],function(err,result2){
+			if (err)
+			{
+				console.error(err)
+				res.send("internal err2")
+				return 
+			}
+			if (result2.rows.length<1 || result2.rows[0].groupid!=req.param("id"))
+			{
+				res.send("param error")
+				return 
+			}
+			var primarycata="";
+			client.execute("select id,is_primary from group_cata where groupid=? allow filtering",[req.param("cata")],function(err,result3){
+				if (err)
+				{
+					console.error(err)
+					res.send("internal err3")
+					return 
+				}
+				for(var i=0;i<result3.length;i++)
+				{
+					if (result3.rows[i].is_primary==1)
+					{
+						primarycata=result3.rows[i].id;
+						break;
+					}
+				}
+				if (primarycata=="")
+				{
+					res.send("internal err4")
+					return 
+				}
+				client.execute("select * from users where userid=?",[req.session.uuid],function(err,result4){
+					if (err)
+					{
+						console.error(err)
+						res.send("internal err5")
+						return 
+					}
+					if (result4.rows.length<1)
+					{
+						res.send("internal err6")
+						return 
+					}
+					var archid=uuid.v4()
+					client.execute("insert into group_arch (id,groupid,group_cata_id,createtime,type,userid,username,userphoto) values (?,?,?,?,?,?,?,?)",[archid,req.param("id"),req.param("cata"),Date.parse(new Date())/1000,1,result4.rows[0].userid,result4.rows[0].username,result4.rows[0].photo],function(err,result5){
+						if (err)
+						{
+							console.error(err)
+							res.send("internal err7")
+							return 
+						} 
+						var itemid=uuid.v4();
+						var dt=new Date();
+						var milisec=dt.getMilliseconds().toString();
+						if (milisec.length==2)
+						{
+							milisec="0"+milisec;
+						}
+						var tstamp=(Date.parse(dt)/1000).toString()+milisec
+						client.execute("insert into group_item (cata_id,createtime,arch_id,id,userid,username,userphoto) values (?,?,?,?,?,?,?)",[req.param("cata"),cql.types.Long.fromString(tstamp),archid,itemid,result4.rows[0].userid,result4.rows[0].username,result4.rows[0].photo],function(err,result6){
+							if (err)
+							{
+								console.error(err)
+								res.send("internal err8")
+								return 
+							}
+							client.execute("insert into group_item (cata_id,createtime,arch_id,id,userid,username,userphoto) values (?,?,?,?,?,?,?)",[primarycata,cql.types.Long.fromString(tstamp),archid,itemid,result4.rows[0].userid,result4.rows[0].username,result4.rows[0].photo],function(err,result6){}) 
+							res.send("ok")
+						})
+					})
+				})
+			})
+		})
+	})
+})
+
 exports.router=router;
