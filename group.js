@@ -100,7 +100,7 @@ router.post("/newgroupsave",bodyparser.urlencoded({ extended: false }),function(
 		return 
 	}
 	var groupuuid=uuid.v4();
-	client.execute("insert into group_cata (id,groupid,is_primary,name,createtime) values (?,?,?,?,?)",[groupuuid,groupuuid,1,name,Date.parse(new Date())/1000],function(err,result){
+	client.execute("insert into group_cata (id,groupid,name,createtime) values (?,?,?,?)",[groupuuid,groupuuid,name,Date.parse(new Date())/1000],function(err,result){
 		if (err)
 		{
 			console.error(err)
@@ -335,8 +335,6 @@ router.post("/modigroupsave/:id",bodyparser.urlencoded({ extended: false }),func
 			res.redirect("/group/i/"+result.rows[0].id);
 		})
 	})
-	
-	
 })
 
 router.post("/newcata/:id",bodyparser.urlencoded({ extended: false }),function(req,res){
@@ -373,7 +371,7 @@ router.post("/newcata/:id",bodyparser.urlencoded({ extended: false }),function(r
 			return 
 		}
 		var uid=uuid.v4();
-		client.execute("insert into group_cata (id,createtime,groupid,is_primary,name) values (?,?,?,?,?)",[uid,Date.parse(new Date())/1000,result.rows[0].id,0,req.body.name.replace(/(^\s*)|(\s*$)/g,"")],function(err,result1){
+		client.execute("insert into group_cata (id,createtime,groupid,name) values (?,?,?,?)",[uid,Date.parse(new Date())/1000,result.rows[0].id,req.body.name.replace(/(^\s*)|(\s*$)/g,"")],function(err,result1){
 			if (err)
 			{
 				console.error(err)
@@ -421,14 +419,50 @@ router.get("/delcata/:id/:cata",function(req,res){
 				res.send("param err2")
 				return 
 			}
-			client.execute("delete from group_cata where id=?",[req.param('cata')],function(err,result2){
+			client.execute("select count(*) from group_cata where groupid=?",[req.param('id')],function(err,result2){
 				if (err)
 				{
 					console.error(err)
 					res.send("internal err3")
-					return 
+					return
 				}
-				res.send("ok")
+				if (result2.rows.length<1)
+				{
+					console.error(err)
+					res.send("internal err4")
+					return
+				}
+				if (result2.rows[0].count<2)
+				{
+					client.execute("insert into group_cata (id,createtime,groupid,name) values (?,?,?,?)",[uuid.v4(),Date.parse(new Date())/1000,req.param('id'),'默认分类'],function(err,result3){
+						if (err)
+						{
+							console.error(err)
+							res.send("internal err6")
+							return 
+						}
+						client.execute("delete from group_cata where id=?",[req.param('cata')],function(err,result3){
+						if (err)
+							{
+								console.error(err)
+								res.send("internal err7")
+								return 
+							}
+							res.send("ok")
+						})
+					})
+				} else
+				{
+					client.execute("delete from group_cata where id=?",[req.param('cata')],function(err,result3){
+						if (err)
+						{
+							console.error(err)
+							res.send("internal err5")
+							return 
+						}
+						res.send("ok")
+					})
+				}
 			})
 		})
 	})
@@ -474,7 +508,7 @@ router.post("/modicata/:id/:cata",bodyparser.urlencoded({ extended: false }),fun
 				res.send("internal err2")
 				return 
 			}
-			if (result1.rows.length<1 || result1.rows[0].groupid!=req.param('id') || result1.rows[0].is_primary==1)
+			if (result1.rows.length<1 || result1.rows[0].groupid!=req.param('id') )
 			{
 				res.send("param err2")
 				return 
@@ -503,7 +537,7 @@ router.post("/posttext/:id/:cata",bodyparser.urlencoded({ extended: false }),fun
 		res.send("empty");
 		return 
 	}
-	if (req.body.name.replace(/(^\s*)|(\s*$)/g,"").length>20000)
+	if (req.body.nr.replace(/(^\s*)|(\s*$)/g,"").length>20000)
 	{
 		res.send("nr too long");
 	}
@@ -531,65 +565,47 @@ router.post("/posttext/:id/:cata",bodyparser.urlencoded({ extended: false }),fun
 				res.send("param error")
 				return 
 			}
-			var primarycata="";
-			client.execute("select id,is_primary from group_cata where groupid=? allow filtering",[req.param("cata")],function(err,result3){
+			client.execute("select * from users where userid=?",[req.session.uuid],function(err,result3){
 				if (err)
 				{
 					console.error(err)
-					res.send("internal err3")
+					res.send("internal err5")
 					return 
 				}
-				for(var i=0;i<result3.length;i++)
+				if (result3.rows.length<1)
 				{
-					if (result3.rows[i].is_primary==1)
-					{
-						primarycata=result3.rows[i].id;
-						break;
-					}
-				}
-				if (primarycata=="")
-				{
-					res.send("internal err4")
+					res.send("internal err6")
 					return 
 				}
-				client.execute("select * from users where userid=?",[req.session.uuid],function(err,result4){
+				client.execute("select * from group where id=?",[req.param("id")],function(err,result4){
 					if (err)
 					{
 						console.error(err)
-						res.send("internal err5")
+						res.send("internal err7")
 						return 
 					}
 					if (result4.rows.length<1)
 					{
-						res.send("internal err6")
+						res.send("internal err8")
 						return 
 					}
-					var archid=uuid.v4()
-					client.execute("insert into group_arch (id,groupid,group_cata_id,createtime,type,userid,username,userphoto) values (?,?,?,?,?,?,?,?)",[archid,req.param("id"),req.param("cata"),Date.parse(new Date())/1000,1,result4.rows[0].userid,result4.rows[0].username,result4.rows[0].photo],function(err,result5){
-						if (err)
+					client.execute("insert into group_item (cataid,createtime,commentnum,groupname,text,type,userid,username,userphoto,usertype) values (?,?,?,?,?,?,?,?,?,?)",[req.param("cata"),Date.parse(new Date())/1000,0,result4.rows[0].name,req.body.nr.replace(/(^\s*)|(\s*$)/g,""),1,result3.rows[0].userid,result3.rows[0].username,result3.rows[0].photo,result1.rows[0].type],function(err,result5){
+						if (result4.rows.length<1)
 						{
-							console.error(err)
-							res.send("internal err7")
+							res.send("internal err8")
 							return 
-						} 
-						var itemid=uuid.v4();
-						var dt=new Date();
-						var milisec=dt.getMilliseconds().toString();
-						if (milisec.length==2)
-						{
-							milisec="0"+milisec;
 						}
-						var tstamp=(Date.parse(dt)/1000).toString()+milisec
-						client.execute("insert into group_item (cata_id,createtime,arch_id,id,userid,username,userphoto) values (?,?,?,?,?,?,?)",[req.param("cata"),cql.types.Long.fromString(tstamp),archid,itemid,result4.rows[0].userid,result4.rows[0].username,result4.rows[0].photo],function(err,result6){
-							if (err)
-							{
-								console.error(err)
-								res.send("internal err8")
-								return 
-							}
-							client.execute("insert into group_item (cata_id,createtime,arch_id,id,userid,username,userphoto) values (?,?,?,?,?,?,?)",[primarycata,cql.types.Long.fromString(tstamp),archid,itemid,result4.rows[0].userid,result4.rows[0].username,result4.rows[0].photo],function(err,result6){}) 
-							res.send("ok")
-						})
+						var resulttosent={}
+						resulttosent.cataid=req.param("cata")
+						resulttosent.cataname=result2.rows[0].name;
+						resulttosent.nr=req.body.nr.replace(/(^\s*)|(\s*$)/g,"")
+						resulttosent.type=1;
+						resulttosent.time=Date.parse(new Date())/1000;
+						resulttosent.userid=result3.rows[0].userid;
+						resulttosent.username=result3.rows[0].username
+						resulttosent.userphoto=result3.rows[0].photo
+						resulttosent.usertype=result1.rows[0].type
+						res.send(resulttosent)
 					})
 				})
 			})
@@ -668,7 +684,6 @@ router.get("/applyjoin/:id",function(req,res){
 				res.send("already applied")
 			})
 		})
-		
 	})
 })
 
