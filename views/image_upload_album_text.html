@@ -1,0 +1,116 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<% include head.html %>
+		<style>
+#div1 {width:350px;height:70px;padding:10px;border:1px solid #aaaaaa;}
+</style>
+	</head>
+	<body>
+	<div id="div1" ondrop="drop(event)" ondragover="allowDrop(event)">可将文件拖拽至此，也可点下面按钮添加</div>
+<br>
+	
+	<input type="file" id="file_inputx" multiple /> 
+	<input type="button" id="file_upload" onclick="startupload()" value="开始上传"/> 
+	<div id="result"></div>
+	</body>
+</html>
+
+<script>
+var pics=[];
+var nowinsert=0;
+var albumid="<%= album.id %>";
+
+
+function allowDrop(ev) {
+    ev.preventDefault();
+}
+
+function drag(ev) {
+    //ev.dataTransfer.setData("text", ev.target.id);
+}
+
+function drop(ev) {
+    ev.preventDefault();
+    //var data = ev.dataTransfer.getData("text");
+    //ev.target.appendChild(document.getElementById(data));
+	for (var i=0;i<ev.dataTransfer.files.length;i++)
+	{
+		getnewpic(ev.dataTransfer.files[i])
+	}
+}
+
+var inp=document.getElementById("file_inputx")
+inp.onchange=function(){
+	for(var i=0;i<this.files.length;i++)
+	{
+		getnewpic(this.files[i])
+	}
+}
+
+function getnewpic(file){
+	var reader=new FileReader();
+	reader.readAsDataURL(file);
+	reader.onload=function(e){
+		var filetype=gettype(this.result).toLowerCase()
+		if (filetype=="image/gif" || filetype=="image/jpeg" || filetype=="image/jpg" || filetype=="image/png" || filetype=="image/bmp")
+		{
+			var id=nowinsert;
+			nowinsert+=1;
+			var pictmp={};
+			pictmp.id=id
+			pictmp.file=file
+			pictmp.result=this.result
+			pictmp.upload=false
+			pics[id]=pictmp;
+			outputpic(pictmp)
+		}
+	}
+}
+
+function gettype(str)
+{
+	var inx0=str.indexOf(":")
+	var inx1=str.indexOf(";")
+	return str.substring(inx0+1,inx1)
+}
+
+function outputpic(pictmp){
+	$("#result").append("<div class=\"picitem\" id=\"picitem"+pictmp.id+"\"><p><img id=\"ss"+pictmp.id+"\" src=\""+pictmp.result+"\" width=\"100\" height=\"100\" />标题：<input type=\"text\" id=\"title"+pictmp.id+"\"</p><p>描述：<textarea id=\"desc"+pictmp.id+"\"></textarea></p><div id=\"status"+pictmp.id+"\"></div></div>");
+}
+
+function startupload(){
+	var picitems=$(".picitem")
+	var flag=-1;
+	for(var i=0;i<picitems.length;i++)
+	{
+		var id=$(picitems[i]).attr("id").substring(7)
+		if (pics[parseInt(id)].upload==false)
+		{
+			flag=parseInt(id)
+			pics[parseInt(id)].upload=true
+			break
+		}
+	}
+	
+	if (flag>-1)
+	{
+		$("#status"+flag).html("正在上传")
+		var title=$("#title"+flag).val();
+		var desc=$("#desc"+flag).val();
+		var b=pics[flag].result
+		
+		$.post("/image/upload_save_text/"+albumid,{b:b,title:title,desc:desc},function(data,status){
+			$("#status"+flag).html("上传完毕")
+			startupload()
+		}).error(function() { 
+			$("#status"+flag).html("上传失败") 
+			startupload()
+		})
+	} else
+	{
+		alert("上传完毕")
+	}
+	
+}
+</script>

@@ -23,7 +23,7 @@ app.set('views', __dirname + '/views');
 app.engine('html', ejs.__express);
 app.set('view engine','html');
 app.use(bodyparser.urlencoded({ extended: false }))
-app.use(bodyparser.json())
+app.use(bodyparser.json({limit:"20480kb"}))
 app.use(session({secret: 'this is it sounds cool', resave:true, saveUninitialized :true }));
 
 router.get("/newalbum",function(req,res){
@@ -504,11 +504,95 @@ router.get('/upload_album/:id',function(req,res){
 	})
 })
 
+router.get('/upload_album_text/:id',function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	if (!result)
+	{
+		app.render("error",{msg:"参数不正确",page:"cool图",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误1")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		app.render("error",{msg:"您还没有登录，不能访问这里",page:"登录页",pageurl:"http://www.itsounds.cool/login"},function(err,html){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2")
+				return
+			}
+			res.send(html)
+		})
+		return 
+	}
+	client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			app.render("error",{msg:"发生内部错误",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误3")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误，不存在这个图集",page:"cool图首页",pageurl:"http://www.itsounds.cool/image"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误4")
+					return
+				}
+				res.send(html)
+			})
+			return
+		}
+		if (result.rows[0].userid!=req.session.uuid)
+		{
+			app.render("error",{msg:"这个图集不是您的，无权操作",page:"图集："+result.rows[0].name,pageurl:"http://www.itsounds.cool/collection/"+result.rows[0].id},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误5")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		app.render("image_upload_album_text",{album:result.rows[0]},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误6")
+					return
+				}
+				res.send(html)
+		})
+	})
+})
+
+
 router.post('/upload_save/:id',function(req,res){
 	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
 	var result=re.test(req.param('id'));
 	var output={}
 	output.files=[]
+	var title=""
+	var desc=""
 	if (!result)
 	{
 		res.send("参数错误"); //待改
@@ -617,7 +701,7 @@ router.post('/upload_save/:id',function(req,res){
 											res.send(output)
 											return 
 										}
-										client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),cql.types.Long.fromString(new Date().getTime().toString()),"","",md5result,data.length,url,uuid.v4()],function(err,result3){
+										client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),cql.types.Long.fromString(new Date().getTime().toString()),title,desc,md5result,data.length,url,uuid.v4()],function(err,result3){
 											if (err)
 											{
 												console.error(err)
@@ -647,6 +731,179 @@ router.post('/upload_save/:id',function(req,res){
 				console.error(err)
 			}
 		})
+	})
+})
+
+router.post('/upload_save_text/:id',bodyparser.urlencoded({ extended: false,limit:"20480kb" }),function(req,res){
+	var re =/^[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$/;
+	var result=re.test(req.param('id'));
+	var output={}
+	output.files=[]
+	var title=""
+	var desc=""
+	if (req.body.title!=undefined)
+	{
+		title=req.body.title
+	}
+	if (req.body.desc!=undefined)
+	{
+		desc=req.body.desc
+	}
+	if (!result)
+	{
+		res.send("参数错误"); //待改
+		return 
+	}
+	if (req.body.b==undefined)
+	{
+		res.send("bad")
+		return 
+	}
+	var posi=req.body.b.indexOf(",")
+	var datax=req.body.b.substr(posi+1);
+	var type=req.body.b.substring(5,posi-7)
+	console.error(type)
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		var oi={}
+		oi.name="nofile.no"
+		oi.error="login error"
+		output.files.push(oi)
+		res.send(output)
+		return 
+	}
+	client.execute("select * from pic_album where id=?",[req.param('id')],function(err,result0){
+		if (err)
+		{
+			var oi={}
+			oi.name="nofile.no"
+			oi.error="internal error0"
+			output.files.push(oi)
+			res.send(output)
+			return
+		}
+		if (result0.rows.length<1)
+		{
+			var oi={}
+			oi.name="nofile.no"
+			oi.error="internal error01"
+			output.files.push(oi)
+			res.send(output)
+			return
+		}
+		if (result0.rows[0].userid!=req.session.uuid)
+		{
+			var oi={}
+			oi.name="nofile.no"
+			oi.error="internal error02"
+			output.files.push(oi)
+			res.send(output)
+			return
+		}
+			try
+			{
+					var data = new Buffer(datax, 'base64')
+					var tupload={}
+					tupload.buffer=data
+					tupload.contentType=type
+					tupload.fileSuffix=tupload.contentType.substring(tupload.contentType.indexOf("/")+1).toLowerCase()
+					if (tupload.fileSuffix!="bmp" &&tupload.fileSuffix!="gif" &&tupload.fileSuffix!="jpg" &&tupload.fileSuffix!="jpeg" &&tupload.fileSuffix!="png")
+					{
+						var oi={}
+						oi.name="nofile.no"
+						oi.error="format error"
+						output.files.push(oi)
+						res.send(output)
+						return
+					}
+					tupload.is_Pic=true
+					var md5=crypto.createHash('md5')
+					md5.update(data)
+					var md5result=md5.digest('hex')
+					var url="";
+					
+					client.execute("select * from pic where size=? and md5=?",[data.length,md5result],function(err,result){
+						if (err)
+						{
+							console.error(err)
+							return
+						}
+						if (result.rows.length>0)
+						{
+							var url=result.rows[0].url
+							client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),cql.types.Long.fromString(new Date().getTime().toString()),title,desc,md5result,data.length,url,uuid.v4()],function(err,result3){
+								if (err)
+								{
+									console.error(err)
+									var oi={}
+									oi.name="nofile.no"
+									oi.error="internal error4"
+									output.files.push(oi)
+									res.send(output)
+									return 
+								}
+								var oi={}
+								oi.name="nofile.no"
+								oi.size=data.length
+								oi.url=url
+								output.files.push(oi)
+								res.send(output)
+							})
+						} else
+						{
+							upload.uploadBuffer(tupload,function(err,result1){
+								if (err)
+								{
+									console.error(err)
+									var oi={}
+									oi.name="nofile.no"
+									oi.error="internal error2"
+									output.files.push(oi)
+									res.send(output)
+									return 
+								}
+								if (result1.status!=undefined && result1.status==200 && result1.objectUrl!=undefined)
+								{
+									var url=result1.objectUrl
+									client.execute("insert into pic (size,md5,url,uploadtime) values (?,?,?,?)",[data.length,md5result,result1.objectUrl,Date.parse(new Date())/1000],function(err,result2){
+										if (err)
+										{
+											var oi={}
+											oi.name="nofile.no"
+											oi.error="internal error3"
+											output.files.push(oi)
+											res.send(output)
+											return 
+										}
+										client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),cql.types.Long.fromString(new Date().getTime().toString()),title,desc,md5result,data.length,url,uuid.v4()],function(err,result3){
+											if (err)
+											{
+												console.error(err)
+												var oi={}
+												oi.name="nofile.no"
+												oi.error="internal error4"
+												output.files.push(oi)
+												res.send(output)
+												return 
+											}
+											var oi={}
+											oi.name="nofile.no"
+											oi.size=data.length
+											oi.url=url
+											output.files.push(oi)
+											res.send(output)
+										})
+									})
+								}
+							})
+						}
+					})
+				
+			}
+			catch (err)
+			{
+				console.error(err)
+			}
 	})
 })
 

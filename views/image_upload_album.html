@@ -4,6 +4,7 @@
 		<% include head.html %>
 	</head>
 	<body>
+	<div><a href="http://www.itsounds.cool/image/upload_album_text/<%= album.id %>">复杂上传模式</a></div>
 		<input id="fileupload" type="file" name="filesupload" data-url="http://www.itsounds.cool/image/upload_save/<%= album.id %>" multiple>
 		<div id="result">
 		</div>
@@ -11,6 +12,8 @@
   <div class="progress-bar progress-bar-striped active" id="probar" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
     <span class="sr-only">0%</span>
   </div>
+  
+  
 </div>
 		<script src="http://www.itsounds.cool/public/jfu/js/vendor/jquery.ui.widget.js"></script>
 		<script src="http://www.itsounds.cool/public/jfu/js/jquery.iframe-transport.js"></script>
