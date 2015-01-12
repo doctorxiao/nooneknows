@@ -826,11 +826,16 @@ router.post('/upload_save_text/:id',bodyparser.urlencoded({ extended: false,limi
 						if (err)
 						{
 							console.error(err)
-							return
+							var oi={}
+							oi.name="nofile.no"
+							oi.error="internal error4"
+							output.files.push(oi)
+							res.send(output)
+							return 
 						}
 						if (result.rows.length>0)
 						{
-							var url=result.rows[0].url
+							url=result.rows[0].url
 							client.execute("insert into pic_album_item (album_id,createtime,title,description,md5,size,url,picid) values (?,?,?,?,?,?,?,?)",[req.param('id'),cql.types.Long.fromString(new Date().getTime().toString()),title,desc,md5result,data.length,url,uuid.v4()],function(err,result3){
 								if (err)
 								{
@@ -864,7 +869,7 @@ router.post('/upload_save_text/:id',bodyparser.urlencoded({ extended: false,limi
 								}
 								if (result1.status!=undefined && result1.status==200 && result1.objectUrl!=undefined)
 								{
-									var url=result1.objectUrl
+									url=result1.objectUrl
 									client.execute("insert into pic (size,md5,url,uploadtime) values (?,?,?,?)",[data.length,md5result,result1.objectUrl,Date.parse(new Date())/1000],function(err,result2){
 										if (err)
 										{

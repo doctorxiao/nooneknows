@@ -731,6 +731,122 @@ router.post("/postlink/:id/:cata",bodyparser.urlencoded({ extended: false }),fun
 	})
 })
 
+router.post("/postpic/:id/:cata",bodyparser.urlencoded({ extended: false }),function(req,res){
+	var nr="";
+	var pic="";
+	var pics=[];
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("not logined");
+		return 
+	}
+	if (req.body.pic==undefined || req.body.pic.replace(/(^\s*)|(\s*$)/g,"").length<1)
+	{
+		res.send("no pic");
+		return 
+	}
+	if (req.body.nr!=undefined && req.body.nr.replace(/(^\s*)|(\s*$)/g,"").length>20000)
+	{
+		res.send("nr too long");
+		return
+	}
+	if (req.body.nr!=undefined )
+	{
+		nr=req.body.nr.replace(/(^\s*)|(\s*$)/g,"")
+	}
+	pic=req.body.pic.replace(/(^\s*)|(\s*$)/g,"")
+	var picarray=pic.split(",")
+	for(var i=0;i<picarray.length;i++)
+	{
+		if (picarray[i].replace(/(^\s*)|(\s*$)/g,"").length>0)
+		{
+			pics.push(picarray[i].replace(/(^\s*)|(\s*$)/g,""))
+		}
+	}
+	if (pics.length<1)
+	{
+		res.send("no pic");
+		return 
+	}
+	client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result1){
+		if (err)
+		{
+			console.error(err)
+			res.send("internal err1")
+			return 
+		}
+		if (result1.rows.length<1 || result1.rows[0].type<2)
+		{
+			res.send("not member")
+			return 
+		}
+		client.execute("select * from group_cata where id=?",[req.param("cata")],function(err,result2){
+			if (err)
+			{
+				console.error(err)
+				res.send("internal err2")
+				return 
+			}
+			if (result2.rows.length<1 || result2.rows[0].groupid!=req.param("id"))
+			{
+				res.send("param error")
+				return 
+			}
+			client.execute("select * from users where userid=?",[req.session.uuid],function(err,result3){
+				if (err)
+				{
+					console.error(err)
+					res.send("internal err5")
+					return 
+				}
+				if (result3.rows.length<1)
+				{
+					res.send("internal err6")
+					return 
+				}
+				client.execute("select * from group where id=?",[req.param("id")],function(err,result4){
+					if (err)
+					{
+						console.error(err)
+						res.send("internal err7")
+						return 
+					}
+					if (result4.rows.length<1)
+					{
+						res.send("internal err8")
+						return 
+					}
+					client.execute("insert into group_item (cataid,createtime,cataname,commentnum,groupname,text,type,pics,userid,username,userphoto,usertype) values (?,?,?,?,?,?,?,?,?,?,?,?)",[req.param("cata"),Date.parse(new Date())/1000,result2.rows[0].name,0,result4.rows[0].name,nr,3,{value:pics, hint: 'set<varchar>'},result3.rows[0].userid,result3.rows[0].username,result3.rows[0].photo,result1.rows[0].type],function(err,result5){
+						if (err)
+						{
+							console.error(err)
+							res.send("internal err9")
+							return 
+						}
+						if (result4.rows.length<1)
+						{
+							res.send("internal err9")
+							return 
+						}
+						var resulttosent={}
+						resulttosent.cataid=req.param("cata")
+						resulttosent.cataname=result2.rows[0].name;
+						resulttosent.nr=nr
+						resulttosent.pics=pics
+						resulttosent.type=3;
+						resulttosent.time=Date.parse(new Date())/1000;
+						resulttosent.userid=result3.rows[0].userid;
+						resulttosent.username=result3.rows[0].username
+						resulttosent.userphoto=result3.rows[0].photo
+						resulttosent.usertype=result1.rows[0].type
+						res.send(resulttosent)
+					})
+				})
+			})
+		})
+	})
+})
+
 router.get("/applyjoin/:id",function(req,res){
 	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
 	{
@@ -802,6 +918,66 @@ router.get("/applyjoin/:id",function(req,res){
 				res.send("already applied")
 			})
 		})
+	})
+})
+
+router.post("/uploadpic",bodyparser.urlencoded({ extended: false,limit:"20480kb" }),function(req,res){
+	if (req.body.b==undefined)
+	{
+		res.send("bad")
+		return 
+	}
+	var posi=req.body.b.indexOf(",")
+	var datax=req.body.b.substr(posi+1);
+	var type=req.body.b.substring(5,posi-7)
+	var data = new Buffer(datax, 'base64')
+	var tupload={}
+	tupload.buffer=data
+	tupload.contentType=type
+	tupload.fileSuffix=tupload.contentType.substring(tupload.contentType.indexOf("/")+1).toLowerCase()
+	if (tupload.fileSuffix!="bmp" &&tupload.fileSuffix!="gif" &&tupload.fileSuffix!="jpg" &&tupload.fileSuffix!="jpeg" &&tupload.fileSuffix!="png")
+	{
+		res.send("bad")
+		return
+	}
+	tupload.is_Pic=true
+	var md5=crypto.createHash('md5')
+	md5.update(data)
+	var md5result=md5.digest('hex')
+	var url="";
+	client.execute("select * from pic where size=? and md5=?",[data.length,md5result],function(err,result){
+		if (err)
+		{
+			res.send("bad")
+			return
+		}
+		if (result.rows.length>0)
+		{
+			res.send(result.rows[0].url)
+			return
+		} else
+		{
+			upload.uploadBuffer(tupload,function(err,result1){
+				if (err)
+				{
+					res.send("bad")
+					return 
+				}
+				if (result1.status!=undefined && result1.status==200 && result1.objectUrl!=undefined)
+				{
+					url=result1.objectUrl
+					client.execute("insert into pic (size,md5,url,uploadtime) values (?,?,?,?)",[data.length,md5result,result1.objectUrl,Date.parse(new Date())/1000],function(err,result2){
+						if (err)
+						{
+							res.send("bad")
+							return 
+						}
+						res.send(url)
+						return 
+					})
+				}
+			})
+		}
 	})
 })
 

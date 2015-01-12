@@ -94,8 +94,23 @@
 									</div>
 									<div class="tab-pane" id="panel-543265">
 										<p>
-											Howdy, I'm in Section 2.
+											<input type="file" id="pic_inputx" multiple /> 
 										</p>
+										<div id="picshow">
+											<div style="clear:both"> </div>
+										</div>
+										<p>
+											同时发点文字：<textarea id="pic_text"></textarea>
+										</p>
+										<div id="postpicchoose">
+											<select class="form-control" id="choosepiccata">
+											<% catas.forEach(function(cata) { %>
+												<option value="<%= cata.id %>"><%= cata.name %></option>
+											<% }) %>
+											</select>
+										</div>
+										<div><input type="button" id="pic_ok" value="上传图片" disabled=true /><input type="button" id="pic_clear" value="清空图片" disabled=true /></div>
+										<div><input type="button" id="pic_ok_ok" value="提交" class="btn" /></div>
 									</div>
 									<div class="tab-pane" id="panel-543159">
 										<p>
@@ -404,6 +419,156 @@
 		})
 	})
 	
+	
+	
+	var pics=[];
+	var nowinsert=0;
+	var uploadedpics=[];
+	var inp=document.getElementById("pic_inputx")
+	inp.onchange=function(){
+		for(var i=0;i<this.files.length;i++)
+		{
+			getnewpic(this.files[i])
+		}
+	}
+	
+	function getnewpic(file){
+	var reader=new FileReader();
+	reader.readAsDataURL(file);
+	reader.onload=function(e){
+		var filetype=gettype(this.result).toLowerCase()
+		if (filetype=="image/gif" || filetype=="image/jpeg" || filetype=="image/jpg" || filetype=="image/png" || filetype=="image/bmp")
+		{
+			var id=nowinsert;
+			nowinsert+=1;
+			if (nowinsert<100) {
+			$("#pic_clear").attr("disabled",false)
+			$("#pic_ok").attr("disabled",false)
+			var pictmp={};
+			pictmp.id=id
+			pictmp.file=file
+			pictmp.result=this.result
+			pictmp.upload=false
+			pics[id]=pictmp;
+			outputpic(pictmp)}
+			else
+			{
+				alert("一次最多只能发100张图")
+			}
+		}
+	}
+}
+
+	function gettype(str)
+	{
+		var inx0=str.indexOf(":")
+		var inx1=str.indexOf(";")
+		return str.substring(inx0+1,inx1)
+	}
+
+	function outputpic(pictmp){
+		$("#picshow").prepend("<div class=\"picitem\" style=\"float:left\" id=\"picitem"+pictmp.id+"\"><p><img id=\"ss"+pictmp.id+"\" src=\""+pictmp.result+"\" width=\"100\" height=\"100\" /></p><div id=\"status"+pictmp.id+"\">待上传</div></div>");
+	}
+	
+	$("#pic_clear").on('click',function(){
+		$("#picshow").html("<div style=\"clear:both\"> </div>");
+		pics=[]
+		nowinsert=0;
+		$("#pic_clear").attr("disabled",true)
+		$("#pic_ok").attr("disabled",true)
+	})
+	
+	function startupload(){
+		var picitems=$(".picitem")
+		var flag=-1;
+		for(var i=0;i<picitems.length;i++)
+		{
+			var id=$(picitems[i]).attr("id").substring(7)
+			if (pics[parseInt(id)].upload==false)
+			{
+				flag=parseInt(id)
+				pics[parseInt(id)].upload=true
+				break
+			}
+		}
+		
+		if (flag>-1)
+		{
+			$("#status"+flag).html("正在上传")
+			var b=pics[flag].result
+			
+			$.post("/group/uploadpic/",{b:b},function(data,status){
+				if (status=="success")
+				{
+					if (data!="bad")
+					{
+						$("#status"+flag).html("完毕")
+						uploadedpics.push(data)
+						startupload()
+						return 
+					}
+				}
+				$("#status"+flag).html("失败")
+				startupload()
+			}).error(function() { 
+				$("#status"+flag).html("失败") 
+				startupload()
+			})
+		} 
+	}
+	
+	$("#pic_ok").on('click',function(){
+		startupload()
+	})
+	$("#pic_ok_ok").on('click',function(){
+		if (uploadedpics.length<1)
+		{
+			alert("请先上传图片再提交")
+			return
+		}
+		var cataid=$("#choosepiccata").val();
+		var nr=$("#pic_text").val().replace(/(^\s*)|(\s*$)/g,"")
+		var s=uploadedpics.join(",")
+		$.post("/group/postpic/"+groupid+"/"+cataid,{nr:nr,pic:s},function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="nr too long")
+				{
+					alert("介绍内容太长")
+					return 
+				}
+				if (data=="no pic")
+				{
+					alert("请先上传图片再提交")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能发表")
+					return 
+				}
+				if (data=="not member")
+				{
+					alert("权限不足，不能发表")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return 
+				}
+				alert("发表成功")
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	})
 </script>
 
 
