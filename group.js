@@ -1104,7 +1104,7 @@ router.post("/uploadpic",bodyparser.urlencoded({ extended: false,limit:"20480kb"
 	})
 })
 
-router.post("/modimember/:id/:uid/:type",function(req,res){
+router.get("/modimember/:id/:uid/:type",function(req,res){
 	if (req.session.uuid==undefined || req.session.uuid=="" || req.session.uuid=="0")
 	{
 		res.send("not logined")
@@ -1166,7 +1166,7 @@ router.post("/modimember/:id/:uid/:type",function(req,res){
 	})
 })
 
-router.post("/getmember/:id/:type",function(req,res){
+router.get("/getmember/:id/:type",function(req,res){
 	if (req.session.uuid==undefined || req.session.uuid=="" || req.session.uuid=="0")
 	{
 		res.send("not logined")
@@ -1189,7 +1189,7 @@ router.post("/getmember/:id/:type",function(req,res){
 			res.send("not permision")
 			return
 		}
-		client.execute("select * from group_member where groupid=? and type=? limit 100",[req.param("id"),acttype],function(err,result1){
+		client.execute("select * from group_member where groupid=? and type=? limit 50",[req.param("id"),acttype],function(err,result1){
 			if (err)
 			{
 				res.send("internal err2")
@@ -1211,6 +1211,45 @@ router.post("/getmember/:id/:type",function(req,res){
 			}
 			res.send(retosend)
 		})
+	})
+})
+
+router.get("/getitem/:cata/:timestamp",function(req,res){
+	client.execute("select * from group_item where cataid=? and createtime<? order by createtime desc limit 20",[],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res.send("internal err")
+			return
+		}
+		var retosend=[]
+		for (var i=0;i<result1.rows.length;i++)
+		{
+			var reobj={};
+			reobj.cataname=result1.rows[i].cataname;
+			reobj.cataid=result1.rows[i].cataid;
+			reobj.commentnum=result1.rows[i].commentnum;
+			reobj.createtime=result1.rows[i].createtime;
+			reobj.groupname=result1.rows[i].groupname;
+			reobj.commentnum=result1.rows[i].commentnum;
+			reobj.lastcomment=result1.rows[i].lastcomment;
+			reobj.lastcommenttime=result1.rows[i].lastcommenttime;
+			reobj.commentnum=result1.rows[i].commentnum;
+			reobj.lastcommentuserid=result1.rows[i].lastcommentuserid;
+			reobj.lastcommentusername=result1.rows[i].lastcommentusername;
+			reobj.lastcommentuserphoto=result1.rows[i].lastcommentuserphoto;
+			reobj.pics=result1.rows[i].pics;
+			reobj.text=result1.rows[i].text;
+			reobj.title=result1.rows[i].title;
+			reobj.url=result1.rows[i].url;
+			reobj.type=result1.rows[i].type;
+			reobj.usertype=result1.rows[i].usertype;
+			reobj.userid=result1.rows[i].userid;
+			reobj.username=result1.rows[i].username;
+			reobj.userphoto=result1.rows[i].userphoto;
+			retosend.push(reobj)
+		}
+		res.send(retosend)
 	})
 })
 
