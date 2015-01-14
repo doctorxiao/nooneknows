@@ -981,4 +981,65 @@ router.post("/uploadpic",bodyparser.urlencoded({ extended: false,limit:"20480kb"
 	})
 })
 
+router.post("/modimember/:id/:uid/:type",function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="" || req.session.uuid=="0")
+	{
+		res.send("not logined")
+		return 
+	}
+	var acttype=parseInt(req.param("type"))
+	if (acttype!=0 && acttype!=2 && acttype!=3)
+	{
+		res.send("param error")
+		return
+	}
+	client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result){
+		if (err)
+		{
+			res.send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("not permision")
+			return
+		}
+		if (acttype==0 || acttype==2)
+		{
+			if (result.rows[0].type<3)
+			{
+				res.send("param error")
+				return
+			}
+		}
+		if (acttype==3)
+		{
+			if (result.rows[0].type!=4)
+			{
+				res.send("param error")
+				return
+			}
+		}
+		client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.param("uid")],function(err,result1){
+			if (err)
+			{
+				res.send("internal err2")
+				return 
+			}
+			if (result1.rows.length<1)
+			{
+				res.send("param error")
+				return
+			}
+			client.execute("update group_member set type=? where groupid=? and userid=?",[type,req.param("id"),req.param("uid")],function(err,result2){
+				if (err)
+				{
+					res.send("internal err3")
+					return 
+				}
+				res.send("ok")
+			})
+		})
+	})
+})
 exports.router=router;
