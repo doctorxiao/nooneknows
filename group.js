@@ -847,75 +847,198 @@ router.post("/postpic/:id/:cata",bodyparser.urlencoded({ extended: false }),func
 	})
 })
 
-router.get("/applyjoin/:id",function(req,res){
+router.post("/postvideo/:id/:cata",bodyparser.urlencoded({ extended: false }),function(req,res){
+	var nr="";
+	var video="";
 	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
 	{
-		res.send("not logined")
+		res.send("not logined");
 		return 
 	}
-	client.execute("select * from group where id=?",[req.param("id")],function(err,result){
+	if (req.body.video==undefined || req.body.video.replace(/(^\s*)|(\s*$)/g,"").length<1)
+	{
+		res.send("no video");
+		return 
+	}
+	if (req.body.nr!=undefined && req.body.nr.replace(/(^\s*)|(\s*$)/g,"").length>20000)
+	{
+		res.send("nr too long");
+		return
+	}
+	if (req.body.video!=undefined && req.body.video.replace(/(^\s*)|(\s*$)/g,"").length>20000)
+	{
+		res.send("video too long");
+		return
+	}
+	if (req.body.nr!=undefined )
+	{
+		nr=req.body.nr.replace(/(^\s*)|(\s*$)/g,"")
+	}
+	if (req.body.video!=undefined )
+	{
+		video=req.body.video.replace(/(^\s*)|(\s*$)/g,"")
+	}
+	client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result1){
 		if (err)
 		{
 			console.error(err)
 			res.send("internal err1")
 			return 
 		}
-		if (result.rows.length<1)
+		if (result1.rows.length<1 || result1.rows[0].type<2)
 		{
-			res.send("param err")
-			return
+			res.send("not member")
+			return 
 		}
-		client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result1){
+		client.execute("select * from group_cata where id=?",[req.param("cata")],function(err,result2){
 			if (err)
 			{
 				console.error(err)
 				res.send("internal err2")
 				return 
 			}
-			if (result1.rows.length>0)
+			if (result2.rows.length<1 || result2.rows[0].groupid!=req.param("id"))
 			{
-				if (result1.rows[0].type==1)
-				{
-					if (result.rows[0].public==1)
-					{
-						client.execute("update group_member set type=? where groupid=? and userid=?",[2,req.param("id"),req.session.uuid],function(err,result2){
-							if (err)
-							{
-								console.error(err)
-								res.send("internal err3")
-								return 
-							}
-							res.send("already joined")
-						})
-						return
-					}
-					res.send('already applied')
-					return 
-				}
-				res.send('already joined')
+				res.send("param error")
 				return 
 			}
-			if (result.rows[0].public==1)
-			{
-				client.execute("insert into group_member (groupid,userid,type) values (?,?,?)",[req.param("id"),req.session.uuid,2],function(err,result3){
-					if (err)
-					{
-						console.error(err)
-						res.send("internal err4")
-						return 
-					}
-					res.send("already joined")
-				})
-				return 
-			}
-			client.execute("insert into group_member (groupid,userid,type) values (?,?,?)",[req.param("id"),req.session.uuid,1],function(err,result3){
+			client.execute("select * from users where userid=?",[req.session.uuid],function(err,result3){
 				if (err)
 				{
 					console.error(err)
 					res.send("internal err5")
 					return 
 				}
-				res.send("already applied")
+				if (result3.rows.length<1)
+				{
+					res.send("internal err6")
+					return 
+				}
+				client.execute("select * from group where id=?",[req.param("id")],function(err,result4){
+					if (err)
+					{
+						console.error(err)
+						res.send("internal err7")
+						return 
+					}
+					if (result4.rows.length<1)
+					{
+						res.send("internal err8")
+						return 
+					}
+					client.execute("insert into group_item (cataid,createtime,cataname,commentnum,groupname,text,type,url,userid,username,userphoto,usertype) values (?,?,?,?,?,?,?,?,?,?,?,?)",[req.param("cata"),Date.parse(new Date())/1000,result2.rows[0].name,0,result4.rows[0].name,nr,4,video,result3.rows[0].userid,result3.rows[0].username,result3.rows[0].photo,result1.rows[0].type],function(err,result5){
+						if (err)
+						{
+							console.error(err)
+							res.send("internal err9")
+							return 
+						}
+						if (result4.rows.length<1)
+						{
+							res.send("internal err9")
+							return 
+						}
+						var resulttosent={}
+						resulttosent.cataid=req.param("cata")
+						resulttosent.cataname=result2.rows[0].name;
+						resulttosent.nr=nr
+						resulttosent.url=video
+						resulttosent.type=4;
+						resulttosent.time=Date.parse(new Date())/1000;
+						resulttosent.userid=result3.rows[0].userid;
+						resulttosent.username=result3.rows[0].username
+						resulttosent.userphoto=result3.rows[0].photo
+						resulttosent.usertype=result1.rows[0].type
+						res.send(resulttosent)
+					})
+				})
+			})
+		})
+	})
+})
+
+router.get("/applyjoin/:id",function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("not logined")
+		return 
+	}
+	client.execute("select * from users where userid=?",[req.session.uuid],function(err,result0){
+		if (err)
+		{
+			console.error(err)
+			res.send("internal err0")
+			return
+		}
+		if (result0.rows.length<1)
+		{
+			res.send("not logined")
+			return 
+		}
+				client.execute("select * from group where id=?",[req.param("id")],function(err,result){
+			if (err)
+			{
+				console.error(err)
+				res.send("internal err1")
+				return 
+			}
+			if (result.rows.length<1)
+			{
+				res.send("param err")
+				return
+			}
+			client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result1){
+				if (err)
+				{
+					console.error(err)
+					res.send("internal err2")
+					return 
+				}
+				if (result1.rows.length>0)
+				{
+					if (result1.rows[0].type==1)
+					{
+						if (result.rows[0].public==1)
+						{
+							client.execute("update group_member set type=? where groupid=? and userid=?",[2,req.param("id"),req.session.uuid],function(err,result2){
+								if (err)
+								{
+									console.error(err)
+									res.send("internal err3")
+									return 
+								}
+								res.send("already joined")
+							})
+							return
+						}
+						res.send('already applied')
+						return 
+					}
+					res.send('already joined')
+					return 
+				}
+				if (result.rows[0].public==1)
+				{
+					client.execute("insert into group_member (groupid,userid,type,username,userphoto) values (?,?,?,?,?)",[req.param("id"),req.session.uuid,2,result0.rows[0].username,result0.rows[0].photo],function(err,result3){
+						if (err)
+						{
+							console.error(err)
+							res.send("internal err4")
+							return 
+						}
+						res.send("already joined")
+					})
+					return 
+				}
+				client.execute("insert into group_member (groupid,userid,type,username,userphoto) values (?,?,?,?,?)",[req.param("id"),req.session.uuid,1,result0.rows[0].username,result0.rows[0].photo],function(err,result3){
+					if (err)
+					{
+						console.error(err)
+						res.send("internal err5")
+						return 
+					}
+					res.send("already applied")
+				})
 			})
 		})
 	})
@@ -1042,4 +1165,55 @@ router.post("/modimember/:id/:uid/:type",function(req,res){
 		})
 	})
 })
+
+router.post("/getmember/:id/:type",function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="" || req.session.uuid=="0")
+	{
+		res.send("not logined")
+		return 
+	}
+	var acttype=parseInt(req.param("type"))
+	if (acttype<0 || acttype>4)
+	{
+		res.send("param error")
+		return
+	}
+	client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result){
+		if (err)
+		{
+			res.send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("not permision")
+			return
+		}
+		client.execute("select * from group_member where groupid=? and type=? limit 100",[req.param("id"),acttype],function(err,result1){
+			if (err)
+			{
+				res.send("internal err2")
+				return 
+			}
+			if (result1.rows.length<1)
+			{
+				res.send("param error")
+				return
+			}
+			var retosend=[]
+			for (var i=0;i<result1.rows.length;i++)
+			{
+				var reobj={};
+				reobj.userid=result1.rows[i].userid;
+				reobj.username=result1.rows[i].username;
+				reobj.userphoto=result1.rows[i].userphoto;
+				retosend.push(reobj)
+			}
+			res.send(retosend)
+		})
+	})
+})
+
+
+
 exports.router=router;
