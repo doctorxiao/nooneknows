@@ -115,11 +115,11 @@ router.post("/newgroupsave",bodyparser.urlencoded({ extended: false }),function(
 			})
 			return 
 		}
-		client.execute("insert into group (id,name,public,createtime,owner,description) values (?,?,?,?,?,?)",[groupuuid,name,freejoin,Date.parse(new Date())/1000,req.session.uuid,""],function(err,result2){
+		client.execute("insert into group_member (groupid,userid,type) values (?,?,?)",[groupuuid,req.session.uuid,4],function(err,result2){
 			if (err)
 			{
 				console.error(err)
-				app.render("error",{msg:"发生内部错误2",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				app.render("error",{msg:"发生内部错误5",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
 					if (err)
 					{
 						console.error(err)
@@ -130,8 +130,24 @@ router.post("/newgroupsave",bodyparser.urlencoded({ extended: false }),function(
 				})
 				return 
 			}
-			client.execute("insert into group_member (groupid,userid,type) values (?,?,?)",[groupuuid,req.session.uuid,4],function(err,result3){})
-			res.redirect("http://www.itsounds.cool/group/i/"+groupuuid)
+			
+			client.execute("insert into group (id,name,public,createtime,owner,description) values (?,?,?,?,?,?)",[groupuuid,name,freejoin,Date.parse(new Date())/1000,req.session.uuid,""],function(err,result2){
+				if (err)
+				{
+					console.error(err)
+					app.render("error",{msg:"发生内部错误6",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+						if (err)
+						{
+							console.error(err)
+							res.send("发生了一些错误6")
+							return
+							}
+						res.send(html)
+					})
+					return 
+				}
+				res.redirect("http://www.itsounds.cool/group/i/"+groupuuid)
+			})
 		})
 	})
 })

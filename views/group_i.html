@@ -90,7 +90,6 @@
 										<div>
 											<input type="button" class="btn" id="postlinkok" value="发表" />
 										</div>
-										<iframe id="linkiframe" width="0" height="0"></iframe> 
 									</div>
 									<div class="tab-pane" id="panel-543265">
 										<p>
@@ -114,8 +113,21 @@
 									</div>
 									<div class="tab-pane" id="panel-543159">
 										<p>
-											Howdy, I'm in Section 2.
+											视频flash地址:<input type="text" id="postvideourl" >
 										</p>
+										<p>
+											介绍说明：<textarea id="postvideoarea"></textarea>
+										</p>
+										<div id="postvideochoose">
+											<select class="form-control" id="choosevideocata">
+											<% catas.forEach(function(cata) { %>
+												<option value="<%= cata.id %>"><%= cata.name %></option>
+											<% }) %>
+											</select>
+										</div>
+										<div>
+											<input type="button" class="btn" id="postvideook" value="发表" />
+										</div>
 									</div>
 								</div>
 							</div>
@@ -550,6 +562,73 @@
 				if (data=="not logined")
 				{
 					alert("未登录，不能发表")
+					return 
+				}
+				if (data=="not member")
+				{
+					alert("权限不足，不能发表")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return 
+				}
+				alert("发表成功")
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	})
+	
+	
+	$("#postvideook").on('click',function(){
+		var cataid=$("#chooselinkcata").val();
+		var url=$("#postvideourl").val().replace(/(^\s*)|(\s*$)/g,"")
+		var nr=$("#postvideoarea").val().replace(/(^\s*)|(\s*$)/g,"")
+		if (url.length<1)
+		{
+			alert('URL不能为空')
+			return 
+		}
+		if (url.length>2000)
+		{
+			alert('URL太长')
+			return 
+		}
+		if (nr.length>20000)
+		{
+			alert('介绍太长')
+			return 
+		}
+		
+		$.post("/group/postvideo/"+groupid+"/"+cataid,{nr:nr,video:url},function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="nr too long")
+				{
+					alert("介绍内容太长")
+					return 
+				}
+				if (data=="URL too long")
+				{
+					alert("URL内容太长")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能发表")
+					return 
+				}
+				if (data=="not full")
+				{
+					alert("参数不完整")
 					return 
 				}
 				if (data=="not member")
