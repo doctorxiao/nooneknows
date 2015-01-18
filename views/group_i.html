@@ -10,6 +10,7 @@
 					<h3><%= group.name %></h3>
 					<p>
 						<button type="button" data-toggle="modal" data-target="#modiGroup">修改</button>
+						<button type="button" id="member_manage_button">成员管理</button>
 					</p>
 					<p><%= group.description %></p>
 					<p><img src="<%= group.photo %>" style="width:100%"/></p>
@@ -138,6 +139,22 @@
 						<% if (member==0) { %>
 						<div id="applyjoinpanel"><input type="button" value="申请加入该社群" id="applyjoinbutton" class="btn"/></div>
 						<% } %>
+						<div id="memberpanel" style="display:none"> 
+							<div>
+								<button id="memberpanel_owner">所有者</button>
+								<button id="memberpanel_admin">管理员</button>
+								<button id="memberpanel_member">成员</button>
+								<button id="memberpanel_apply">申请</button>
+								<button id="memberpanel_black">黑名单</button>
+							</div>
+							<div>
+								查找用户：<input type="text" id="memberpanel_name" />
+								<button id="memberpanel_name_ok">确定</button>
+							</div>
+							<div id="membernr">
+							
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -183,6 +200,16 @@
 	{
 		document.getElementById("postnrpanel").style.display="block";
 	}
+	if (member>2)
+	{
+		//$(".adminlevel").css("display","block");
+	}
+	
+	$("#member_manage_button").click(function(){
+		$("#memberpanel").css("display","block")
+		$("#postnrpanel").css("display","none")
+	})
+	
 	$("#modigroupok").click(function(){
 		var groupname=$("#group_name").val()
 		groupname=groupname.replace(/(^\s*)|(\s*$)/g,"");

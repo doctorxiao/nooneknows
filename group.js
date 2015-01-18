@@ -1016,7 +1016,7 @@ router.get("/applyjoin/:id",function(req,res){
 					{
 						if (result.rows[0].public==1)
 						{
-							client.execute("update group_member set type=? where groupid=? and userid=?",[2,req.param("id"),req.session.uuid],function(err,result2){
+							client.execute("update group_member set type=?,username=?,userphoto=? where groupid=? and userid=?",[2,result0.rows[0].username,result0.rows[0].photo,req.param("id"),req.session.uuid],function(err,result2){
 								if (err)
 								{
 									console.error(err)
