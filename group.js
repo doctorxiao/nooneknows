@@ -100,53 +100,82 @@ router.post("/newgroupsave",bodyparser.urlencoded({ extended: false }),function(
 		return 
 	}
 	var groupuuid=uuid.v4();
-	client.execute("insert into group_cata (id,groupid,name,createtime) values (?,?,?,?)",[groupuuid,groupuuid,name,Date.parse(new Date())/1000],function(err,result){
+	client.execute("select * from users where id=?",[req.session.uuid],function(err,result0){
 		if (err)
 		{
 			console.error(err)
-			app.render("error",{msg:"发生内部错误1",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+			app.render("error",{msg:"发生内部错误0",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
 				if (err)
 				{
 					console.error(err)
-					res.send("发生了一些错误4")
+					res.send("发生了一些错误3.5")
 					return
 					}
 				res.send(html)
 			})
 			return 
 		}
-		client.execute("insert into group_member (groupid,userid,type) values (?,?,?)",[groupuuid,req.session.uuid,4],function(err,result2){
+		if (result0.rows.length<1)
+		{
+			app.render("error",{msg:"账号状态不正确",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误3.6")
+					return
+					}
+				res.send(html)
+			})
+			return 
+		}
+		client.execute("insert into group_cata (id,groupid,name,createtime) values (?,?,?,?)",[groupuuid,groupuuid,name,Date.parse(new Date())/1000],function(err,result){
 			if (err)
 			{
 				console.error(err)
-				app.render("error",{msg:"发生内部错误5",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				app.render("error",{msg:"发生内部错误1",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
 					if (err)
 					{
 						console.error(err)
-						res.send("发生了一些错误5")
+						res.send("发生了一些错误4")
 						return
 						}
 					res.send(html)
 				})
 				return 
 			}
-			
-			client.execute("insert into group (id,name,public,createtime,owner,description) values (?,?,?,?,?,?)",[groupuuid,name,freejoin,Date.parse(new Date())/1000,req.session.uuid,""],function(err,result2){
+			client.execute("insert into group_member (groupid,userid,type,username,userphoto) values (?,?,?)",[groupuuid,req.session.uuid,4],function(err,result2){
 				if (err)
 				{
 					console.error(err)
-					app.render("error",{msg:"发生内部错误6",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+					app.render("error",{msg:"发生内部错误5",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
 						if (err)
 						{
 							console.error(err)
-							res.send("发生了一些错误6")
+							res.send("发生了一些错误5")
 							return
 							}
 						res.send(html)
 					})
 					return 
 				}
-				res.redirect("http://www.itsounds.cool/group/i/"+groupuuid)
+				
+				client.execute("insert into group (id,name,public,createtime,owner,description) values (?,?,?,?,?,?)",[groupuuid,name,freejoin,Date.parse(new Date())/1000,req.session.uuid,""],function(err,result2){
+					if (err)
+					{
+						console.error(err)
+						app.render("error",{msg:"发生内部错误6",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+							if (err)
+							{
+								console.error(err)
+								res.send("发生了一些错误6")
+								return
+								}
+							res.send(html)
+						})
+						return 
+					}
+					res.redirect("http://www.itsounds.cool/group/i/"+groupuuid)
+				})
 			})
 		})
 	})
@@ -1030,6 +1059,11 @@ router.get("/applyjoin/:id",function(req,res){
 						res.send('already applied')
 						return 
 					}
+					if (result1.rows[0].type==0)
+					{
+						res.send('black')
+						return 
+					}
 					res.send('already joined')
 					return 
 				}
@@ -1170,7 +1204,70 @@ router.get("/modimember/:id/:uid/:type",function(req,res){
 				res.send("param error")
 				return
 			}
+			if (result1.rows[0].type==4)
+			{
+				res.send("param error")
+				return
+			}
 			client.execute("update group_member set type=? where groupid=? and userid=?",[type,req.param("id"),req.param("uid")],function(err,result2){
+				if (err)
+				{
+					res.send("internal err3")
+					return 
+				}
+				res.send("ok")
+			})
+		})
+	})
+})
+
+router.get("/kickmember/:id/:uid/",function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="" || req.session.uuid=="0")
+	{
+		res.send("not logined")
+		return 
+	}
+	client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result){
+		if (err)
+		{
+			res.send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("not permision")
+			return
+		}
+		client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.param("uid")],function(err,result1){
+			if (err)
+			{
+				res.send("internal err2")
+				return 
+			}
+			if (result1.rows.length<1)
+			{
+				res.send("param error")
+				return
+			}
+			if (result.rows[0].type<3)
+			{
+				res.send("not permision")
+				return
+			}
+			if (result1.rows[0].type==4)
+			{
+				res.send("not permision")
+				return
+			}
+			if (result1.rows[0].type==3)
+			{
+				if (result.rows[0].type!=4)
+				{
+					res.send("not permision")
+					return
+				}
+			}
+			client.execute("delete from group_member where groupid=? and userid=?",[req.param("id"),req.param("uid")],function(err,result2){
 				if (err)
 				{
 					res.send("internal err3")
@@ -1205,9 +1302,10 @@ router.get("/getmember/:id/:type",function(req,res){
 			res.send("not permision")
 			return
 		}
-		client.execute("select * from group_member where groupid=? and type=? limit 50",[req.param("id"),acttype],function(err,result1){
+		client.execute("select * from group_member where groupid=? and type=? limit 50 allow filtering",[req.param("id"),acttype],function(err,result1){
 			if (err)
 			{
+				console.error(err)
 				res.send("internal err2")
 				return 
 			}

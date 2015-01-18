@@ -318,6 +318,10 @@
 				{
 					$("#applyjoinpanel").html("已经申请加入该社群，待批准");
 				}
+				if (data.indexOf("black")>-1)
+				{
+					alert("被该群加入黑名单，无法申请")
+				}
 			}
 		})
 	})
@@ -675,11 +679,260 @@
 			}
 		})
 	})
+	
+	
+	$("#memberpanel_owner").click(function(){
+		$.get("/group/getmember/"+groupid+"/4",function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能查看")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				var str='<div id="userpanelitem'+data[0].userid+'"><a href="/user/'+data[0].userid+'" target="_blank">'+data[0].username+'</a><a href="/user/'+data[0].userid+'" target="_blank"><img src="'+data[0].userphoto+'" width="100" height="100" /></a></div>'
+				$("#membernr").html(str)
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	})
+	
+	$("#memberpanel_admin").click(function(){
+		$.get("/group/getmember/"+groupid+"/3",function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能查看")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				var str="";
+				for (var i=0;i<data.length;i++)
+				{
+					str+='<div style="float:left" id="userpanelitem'+data[i].userid+'"><a href="/user/'+data[0].userid+'" target="_blank">'+data[0].username+'</a><a href="/user/'+data[0].userid+'" target="_blank"><img src="'+data[0].userphoto+'" width="100" height="100" /></a><div><input type="button" value="取消管理员" onclick="modimember(\''+data[i].userid+'\',2)"/><input type="button" value="踢出" onclick="kickmember(\''+data[i].userid+'\')"/><input type="button" value="加入黑名单" onclick="modimember(\''+data[i].userid+'\',0)"/></div></div>'
+				}
+				str+='<div style="clear:both"></div>'
+				$("#membernr").html(str)
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	})
+	
+	$("#memberpanel_member").click(function(){
+		$.get("/group/getmember/"+groupid+"/2",function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能查看")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				var str="";
+				for (var i=0;i<data.length;i++)
+				{
+					str+='<div style="float:left" id="userpanelitem'+data[i].userid+'"><a href="/user/'+data[0].userid+'" target="_blank">'+data[0].username+'</a><a href="/user/'+data[0].userid+'" target="_blank"><img src="'+data[0].userphoto+'" width="100" height="100" /></a><div><input type="button" value="设为管理员" onclick="modimember(\''+data[i].userid+'\',3)"/><input type="button" value="踢出" onclick="kickmember(\''+data[i].userid+'\')"/><input type="button" value="加入黑名单" onclick="modimember(\''+data[i].userid+'\',0)"/></div></div>'
+				}
+				str+='<div style="clear:both"></div>'
+				$("#membernr").html(str)
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	})
+	
+	$("#memberpanel_apply").click(function(){
+		$.get("/group/getmember/"+groupid+"/1",function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能查看")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				var str="";
+				for (var i=0;i<data.length;i++)
+				{
+					str+='<div style="float:left" id="userpanelitem'+data[i].userid+'"><a href="/user/'+data[0].userid+'" target="_blank">'+data[0].username+'</a><a href="/user/'+data[0].userid+'" target="_blank"><img src="'+data[0].userphoto+'" width="100" height="100" /></a><div><input type="button" value="通过" onclick="modimember(\''+data[i].userid+'\',2)"/><input type="button" value="不通过" onclick="kickmember(\''+data[i].userid+'\')"/></div></div>'
+				}
+				str+='<div style="clear:both"></div>'
+				$("#membernr").html(str)
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	})
+	
+	$("#memberpanel_black").click(function(){
+		$.get("/group/getmember/"+groupid+"/0",function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能查看")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				var str="";
+				for (var i=0;i<data.length;i++)
+				{
+					str+='<div style="float:left" id="userpanelitem'+data[i].userid+'"><a href="/user/'+data[0].userid+'" target="_blank">'+data[0].username+'</a><a href="/user/'+data[0].userid+'" target="_blank"><img src="'+data[0].userphoto+'" width="100" height="100" /></a><div><input type="button" value="移出黑名单" onclick="kickmember(\''+data[i].userid+'\')"/></div></div>'
+				}
+				str+='<div style="clear:both"></div>'
+				$("#membernr").html(str)
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	})
+	
+	
+	function kickmember(a)
+	{
+		$.get("/group/kickmember/"+groupid+"/"+a,function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能操作")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				$("#userpanelitem"+a).html("已移除")
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	}
+	function modimember(a,b)
+	{
+		$.get("/group/modimember/"+groupid+"/"+a+"/"+b,function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能操作")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				$("#userpanelitem"+a).html("已更改")
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	}
+	
 </script>
 
 
 
-<script>
-
-
-</script>
