@@ -211,6 +211,7 @@ router.get("/i/:id",function(req,res){
 			return 
 		}
 		var catas=[];
+		var cataidstr="";
 		client.execute("select * from group_cata where groupid=?",[req.param('id')],function(err,result1){
 			if (err)
 			{
@@ -219,28 +220,52 @@ router.get("/i/:id",function(req,res){
 			}
 			for(var i=0;i<result1.rows.length;i++)
 			{
-				if (result1.rows[i].is_primary!=1)
-				{
-					catas.push(result1.rows[i])
-				}
+				catas.push(result1.rows[i])
+				cataidstr+=","+result1.rows[i].id;
 			}
-			var member=0;
-			if (req.session.uuid!=undefined && req.session.uuid!="")
+			if (cataidstr.length>2)
 			{
-				client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
-					if (err)
-					{
-						console.error(err)
-					}
-					if (result2.rows.length>0)
-					{
-						member=result2.rows[0].type;
-					}
-					if (req.session.uuid==result.rows[0].owner)
-					{
-						member=4
-					}
-					app.render("group_i",{group:result.rows[0],catas:catas,member:member},function(err,html){
+				cataidstr=cataidstr.substr(1)
+			} else
+			{
+				cataidstr=""
+			}
+			client.execute("select * from group_item where cataid in ("+cataidstr+") order by createtime desc limit 30",[],function (err,result0){
+				if (err)
+				{
+					res.send("发生了一些错误2.5")
+					console.error(err)
+					return 
+				}
+				var member=0;
+				if (req.session.uuid!=undefined && req.session.uuid!="")
+				{
+					client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
+						if (err)
+						{
+							console.error(err)
+						}
+						if (result2.rows.length>0)
+						{
+							member=result2.rows[0].type;
+						}
+						if (req.session.uuid==result.rows[0].owner)
+						{
+							member=4
+						}
+						app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
+							if (err)
+							{
+								console.error(err)
+								res.send("发生了一些错误3")
+								return
+							}
+							res.send(html)
+						})
+					})
+				} else
+				{
+					app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
 						if (err)
 						{
 							console.error(err)
@@ -249,22 +274,305 @@ router.get("/i/:id",function(req,res){
 						}
 						res.send(html)
 					})
-				})
+				}
+			})
+		})
+	})
+})
+
+router.get("/i/:id/c/:cata",function(req,res){
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			app.render("error",{msg:"发生内部错误1",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误1")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误，不存在这个社群",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		client.execute("select * from group_cata where id=?",[req.param('cata')],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2.3")
+				return 
+			}
+			if (result1.rows.length<1 || result1.rows[0].groupid!=req.param('id'))
+			{
+				res.send("参数错误")
+				return 
+			}
+			client.execute("select * from group_item where cataid=? order by createtime desc limit 30",[req.param('cata')],function (err,result0){
+				if (err)
+				{
+					res.send("发生了一些错误2.5")
+					console.error(err)
+					return 
+				}
+				var member=0;
+				if (req.session.uuid!=undefined && req.session.uuid!="")
+				{
+					client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
+						if (err)
+						{
+							console.error(err)
+						}
+						if (result2.rows.length>0)
+						{
+							member=result2.rows[0].type;
+						}
+						if (req.session.uuid==result.rows[0].owner)
+						{
+							member=4
+						}
+						app.render("group_i",{group:result.rows[0],catas:result1.rows[0],member:member,items:result0.rows},function(err,html){
+							if (err)
+							{
+								console.error(err)
+								res.send("发生了一些错误3")
+								return
+							}
+							res.send(html)
+						})
+					})
+				} else
+				{
+					app.render("group_i",{group:result.rows[0],cata:result1.rows[0],member:member,items:result0.rows},function(err,html){
+						if (err)
+						{
+							console.error(err)
+							res.send("发生了一些错误3")
+							return
+						}
+						res.send(html)
+					})
+				}
+			})
+		})
+	})
+})
+
+router.get("/i/:id/:timestamp",function(req,res){
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			app.render("error",{msg:"发生内部错误1",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误1")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误，不存在这个社群",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		var catas=[];
+		var cataidstr="";
+		client.execute("select * from group_cata where groupid=?",[req.param('id')],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				return 
+			}
+			for(var i=0;i<result1.rows.length;i++)
+			{
+				catas.push(result1.rows[i])
+				cataidstr+=","+result1.rows[i].id;
+			}
+			if (cataidstr.length>2)
+			{
+				cataidstr=cataidstr.substr(1)
 			} else
 			{
-				app.render("group_i",{group:result.rows[0],catas:catas,member:member},function(err,html){
-					if (err)
-					{
-						console.error(err)
-						res.send("发生了一些错误3")
-						return
-					}
-					res.send(html)
-				})
+				cataidstr=""
 			}
-			
-			
+			client.execute("select * from group_item where cataid in ("+cataidstr+") and createtime<? order by createtime desc limit 30",[parseInt(req.param("timestamp"))],function (err,result0){
+				if (err)
+				{
+					res.send("发生了一些错误2.5")
+					console.error(err)
+					return 
+				}
+				var member=0;
+				if (req.session.uuid!=undefined && req.session.uuid!="")
+				{
+					client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
+						if (err)
+						{
+							console.error(err)
+						}
+						if (result2.rows.length>0)
+						{
+							member=result2.rows[0].type;
+						}
+						if (req.session.uuid==result.rows[0].owner)
+						{
+							member=4
+						}
+						app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
+							if (err)
+							{
+								console.error(err)
+								res.send("发生了一些错误3")
+								return
+							}
+							res.send(html)
+						})
+					})
+				} else
+				{
+					app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
+						if (err)
+						{
+							console.error(err)
+							res.send("发生了一些错误3")
+							return
+						}
+						res.send(html)
+					})
+				}
+			})
 		})
+	})
+})
+
+router.get("/getgroupitems/:id/:timestamp",function(res,req){
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res.send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("param error")
+			return 
+		}
+		var catas=[];
+		var cataidstr="";
+		client.execute("select * from group_cata where groupid=?",[req.param('id')],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				return 
+			}
+			for(var i=0;i<result1.rows.length;i++)
+			{
+				catas.push(result1.rows[i])
+				cataidstr+=","+result1.rows[i].id;
+			}
+			if (cataidstr.length>2)
+			{
+				cataidstr=cataidstr.substr(1)
+			} else
+			{
+				cataidstr=""
+			}
+			client.execute("select * from group_item where cataid in ("+cataidstr+") and createtime<? order by createtime desc limit 30",[parseInt(req.param("timestamp"))],function (err,result0){
+				if (err)
+				{
+					res.send("internal err2")
+					console.error(err)
+					return 
+				}
+				var retosend=[];
+				for (var i=0;i<result0.length;i++)
+				{
+					var reitem={}
+					reitem.cataid=result0.rows[i].cataid
+					reitem.cataname=result0.rows[i].name;
+					reitem.nr=result0.rows[i].nr
+					reitem.pics=result0.rows[i].pics
+					reitem.type=result0.rows[i].type;
+					reitem.title=result0.rows[i].title;
+					reitem.url=result0.rows[i].url;
+					reitem.createtime=result0.rows[i].createtime;
+					reitem.commentnum=result0.rows[i].commentnum;
+					reitem.userid=result0.rows[i].userid;
+					reitem.username=result0.rows[i].username
+					reitem.userphoto=result0.rows[i].userphoto
+					reitem.usertype=result0.rows[i].usertype
+					reitem.lastcomment=result0.rows[i].lastcomment
+					reitem.lastcommenttime=result0.rows[i].lastcommenttime
+					reitem.lastcommentuserid=result0.rows[i].lastcommentuserid
+					reitem.lastcommentusername=result0.rows[i].lastcommentusername
+					reitem.lastcommentuserphoto=result0.rows[i].lastcommentuserphoto
+					retosend.push(reitem)
+				}
+				res.send(retosend)
+			})
+		})
+	})
+})
+
+router.get("/getcataitems/:id/:timestamp",function(res,req){
+	client.execute("select * from group_item where cataid=? and createtime<? order by createtime desc limit 30",[req.param("id"),parseInt(req.param("timestamp"))],function (err,result0){
+		if (err)
+		{
+			res.send("internal err")
+			console.error(err)
+			return 
+		}
+		var retosend=[];
+		for (var i=0;i<result0.length;i++)
+		{
+			var reitem={}
+			reitem.cataid=result0.rows[i].cataid
+			reitem.cataname=result0.rows[i].name;
+			reitem.nr=result0.rows[i].nr
+			reitem.pics=result0.rows[i].pics
+			reitem.type=result0.rows[i].type;
+			reitem.title=result0.rows[i].title;
+			reitem.url=result0.rows[i].url;
+			reitem.createtime=result0.rows[i].createtime;
+			reitem.commentnum=result0.rows[i].commentnum;
+			reitem.userid=result0.rows[i].userid;
+			reitem.username=result0.rows[i].username
+			reitem.userphoto=result0.rows[i].userphoto
+			reitem.usertype=result0.rows[i].usertype
+			reitem.lastcomment=result0.rows[i].lastcomment
+			reitem.lastcommenttime=result0.rows[i].lastcommenttime
+			reitem.lastcommentuserid=result0.rows[i].lastcommentuserid
+			reitem.lastcommentusername=result0.rows[i].lastcommentusername
+			reitem.lastcommentuserphoto=result0.rows[i].lastcommentuserphoto
+			retosend.push(reitem)
+		}
+		res.send(retosend)
 	})
 })
 
