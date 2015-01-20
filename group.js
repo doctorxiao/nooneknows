@@ -938,6 +938,76 @@ router.post("/modicata/:id/:cata",bodyparser.urlencoded({ extended: false }),fun
 	})
 })
 
+router.get("/delitem/:id/:cata/:timestamp",function(req,res){
+	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
+	{
+		res.send("not logined");
+		return 
+	}
+	client.execute("select * from group_item where cataid=? and createtime=?",[req.param("id"),req.param("cata")],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			res.send("internal err1")
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			res.send("param error")
+			return 
+		}
+		if (result.rows[0].userid==req.session.uuid)
+		{
+			client.execute("delete from group_item where cataid=? and createtime=?",[req.param("id"),req.param("cata")].function(err,result1){
+				if (err)
+				{
+					console.error(err)
+					res.send("internal err2")
+					return 
+				}
+				res.send("ok")
+			})
+		} else
+		{
+			client.execute("select * from group_cata where id=?",[req.param("cata")],function(err,result2){
+				if (err)
+				{
+					console.error(err)
+					res.send("internal err3")
+					return 
+				}
+				if (result2.rows.length<1 || result2.rows[0].groupid!=req.param("id"))
+				{
+					res.send("param error")
+					return 
+				}
+				client.execute("select * from group_member where groupid=? and userid=?",[req.param("id"),req.session.uuid],function(err,result3){
+					if (err)
+					{
+						console.error(err)
+						res.send("internal err4")
+						return 
+					}
+					if (result3.rows.length<1 || result3.rows[0].type<3)
+					{
+						res.send("not permision")
+						return 
+					}
+					client.execute("delete from group_item where cataid=? and createtime=?",[req.param("id"),req.param("cata")].function(err,result4){
+						if (err)
+						{
+							console.error(err)
+							res.send("internal err5")
+							return 
+						}
+						res.send("ok")
+					})
+				})
+			})
+		}
+	})
+})
+
 router.post("/posttext/:id/:cata",bodyparser.urlencoded({ extended: false }),function(req,res){
 	if (req.session.uuid==undefined || req.session.uuid=="0" || req.session.uuid=="")
 	{
