@@ -230,42 +230,23 @@ router.get("/i/:id",function(req,res){
 			{
 				cataidstr=""
 			}
-			client.execute("select * from group_item where cataid in ("+cataidstr+") order by createtime desc limit 30",[],function (err,result0){
-				if (err)
-				{
-					res.send("发生了一些错误2.5")
-					console.error(err)
-					return 
-				}
-				var member=0;
-				if (req.session.uuid!=undefined && req.session.uuid!="")
-				{
-					client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
-						if (err)
-						{
-							console.error(err)
-						}
-						if (result2.rows.length>0)
-						{
-							member=result2.rows[0].type;
-						}
-						if (req.session.uuid==result.rows[0].owner)
-						{
-							member=4
-						}
-						app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
-							if (err)
-							{
-								console.error(err)
-								res.send("发生了一些错误3")
-								return
-							}
-							res.send(html)
-						})
-					})
-				} else
-				{
-					app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
+			var member=0;
+			if (req.session.uuid!=undefined && req.session.uuid!="")
+			{
+				client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
+					if (err)
+					{
+						console.error(err)
+					}
+					if (result2.rows.length>0)
+					{
+						member=result2.rows[0].type;
+					}
+					if (req.session.uuid==result.rows[0].owner)
+					{
+						member=4
+					}
+					app.render("group_i",{group:result.rows[0],catas:catas,member:member,laststamp:Date.parse(new Date())/1000,pagetype:0,pagecataid:"0"},function(err,html){
 						if (err)
 						{
 							console.error(err)
@@ -274,8 +255,19 @@ router.get("/i/:id",function(req,res){
 						}
 						res.send(html)
 					})
-				}
-			})
+				})
+			} else
+			{
+				app.render("group_i",{group:result.rows[0],catas:catas,member:member,laststamp:Date.parse(new Date())/1000,pagetype:0,pagecataid:"0"},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误3")
+						return
+					}
+					res.send(html)
+				})
+			}
 		})
 	})
 })
@@ -321,42 +313,23 @@ router.get("/i/:id/c/:cata",function(req,res){
 				res.send("参数错误")
 				return 
 			}
-			client.execute("select * from group_item where cataid=? order by createtime desc limit 30",[req.param('cata')],function (err,result0){
-				if (err)
-				{
-					res.send("发生了一些错误2.5")
-					console.error(err)
-					return 
-				}
-				var member=0;
-				if (req.session.uuid!=undefined && req.session.uuid!="")
-				{
-					client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
-						if (err)
-						{
-							console.error(err)
-						}
-						if (result2.rows.length>0)
-						{
-							member=result2.rows[0].type;
-						}
-						if (req.session.uuid==result.rows[0].owner)
-						{
-							member=4
-						}
-						app.render("group_i",{group:result.rows[0],catas:result1.rows[0],member:member,items:result0.rows},function(err,html){
-							if (err)
-							{
-								console.error(err)
-								res.send("发生了一些错误3")
-								return
-							}
-							res.send(html)
-						})
-					})
-				} else
-				{
-					app.render("group_i",{group:result.rows[0],cata:result1.rows[0],member:member,items:result0.rows},function(err,html){
+			var member=0;
+			if (req.session.uuid!=undefined && req.session.uuid!="")
+			{
+				client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
+					if (err)
+					{
+						console.error(err)
+					}
+					if (result2.rows.length>0)
+					{
+						member=result2.rows[0].type;
+					}
+					if (req.session.uuid==result.rows[0].owner)
+					{
+						member=4
+					}
+					app.render("group_i",{group:result.rows[0],catas:result1.rows[0],member:member,laststamp:Date.parse(new Date())/1000,pagetype:1,pagecataid:req.param("cata")},function(err,html){
 						if (err)
 						{
 							console.error(err)
@@ -365,8 +338,19 @@ router.get("/i/:id/c/:cata",function(req,res){
 						}
 						res.send(html)
 					})
-				}
-			})
+				})
+			} else
+			{
+				app.render("group_i",{group:result.rows[0],cata:result1.rows[0],member:member,laststamp:Date.parse(new Date())/1000,pagetype:1,pagecataid:req.param("cata")},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误3")
+						return
+					}
+					res.send(html)
+				})
+			}
 		})
 	})
 })
@@ -420,42 +404,23 @@ router.get("/i/:id/:timestamp",function(req,res){
 			{
 				cataidstr=""
 			}
-			client.execute("select * from group_item where cataid in ("+cataidstr+") and createtime<? order by createtime desc limit 30",[parseInt(req.param("timestamp"))],function (err,result0){
-				if (err)
-				{
-					res.send("发生了一些错误2.5")
-					console.error(err)
-					return 
-				}
-				var member=0;
-				if (req.session.uuid!=undefined && req.session.uuid!="")
-				{
-					client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
-						if (err)
-						{
-							console.error(err)
-						}
-						if (result2.rows.length>0)
-						{
-							member=result2.rows[0].type;
-						}
-						if (req.session.uuid==result.rows[0].owner)
-						{
-							member=4
-						}
-						app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
-							if (err)
-							{
-								console.error(err)
-								res.send("发生了一些错误3")
-								return
-							}
-							res.send(html)
-						})
-					})
-				} else
-				{
-					app.render("group_i",{group:result.rows[0],catas:catas,member:member,items:result0.rows},function(err,html){
+			var member=0;
+			if (req.session.uuid!=undefined && req.session.uuid!="")
+			{
+				client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
+					if (err)
+					{
+						console.error(err)
+					}
+					if (result2.rows.length>0)
+					{
+						member=result2.rows[0].type;
+					}
+					if (req.session.uuid==result.rows[0].owner)
+					{
+						member=4
+					}
+					app.render("group_i",{group:result.rows[0],catas:catas,member:member,laststamp:req.param("timestamp"),pagetype:0,pagecataid:"0"},function(err,html){
 						if (err)
 						{
 							console.error(err)
@@ -464,13 +429,107 @@ router.get("/i/:id/:timestamp",function(req,res){
 						}
 						res.send(html)
 					})
-				}
-			})
+				})
+			} else
+			{
+				app.render("group_i",{group:result.rows[0],catas:catas,member:member,laststamp:req.param("timestamp"),pagetype:0,pagecataid:"0"},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误3")
+						return
+					}
+					res.send(html)
+				})
+			}
 		})
 	})
 })
 
-router.get("/getgroupitems/:id/:timestamp",function(res,req){
+router.get("/i/:id/c/:cata/:timestamp",function(req,res){
+	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
+		if (err)
+		{
+			console.error(err)
+			app.render("error",{msg:"发生内部错误1",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误1")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		if (result.rows.length<1)
+		{
+			app.render("error",{msg:"参数错误，不存在这个社群",page:"社群首页",pageurl:"http://www.itsounds.cool/group/index"},function(err,html){
+				if (err)
+				{
+					console.error(err)
+					res.send("发生了一些错误2")
+					return
+				}
+				res.send(html)
+			})
+			return 
+		}
+		client.execute("select * from group_cata where id=?",[req.param('cata')],function(err,result1){
+			if (err)
+			{
+				console.error(err)
+				res.send("发生了一些错误2.3")
+				return 
+			}
+			if (result1.rows.length<1 || result1.rows[0].groupid!=req.param('id'))
+			{
+				res.send("参数错误")
+				return 
+			}
+			var member=0;
+			if (req.session.uuid!=undefined && req.session.uuid!="")
+			{
+				client.execute("select * from group_member where groupid=? and userid=?",[req.param('id'),req.session.uuid],function(err,result2){
+					if (err)
+					{
+						console.error(err)
+					}
+					if (result2.rows.length>0)
+					{
+						member=result2.rows[0].type;
+					}
+					if (req.session.uuid==result.rows[0].owner)
+					{
+						member=4
+					}
+					app.render("group_i",{group:result.rows[0],catas:result1.rows[0],member:member,laststamp:req.param("timestamp"),pagetype:1,pagecataid:req.param("cata")},function(err,html){
+						if (err)
+						{
+							console.error(err)
+							res.send("发生了一些错误3")
+							return
+						}
+						res.send(html)
+					})
+				})
+			} else
+			{
+				app.render("group_i",{group:result.rows[0],cata:result1.rows[0],member:member,laststamp:req.param("timestamp"),pagetype:1,pagecataid:req.param("cata")},function(err,html){
+					if (err)
+					{
+						console.error(err)
+						res.send("发生了一些错误3")
+						return
+					}
+					res.send(html)
+				})
+			}
+		})
+	})
+})
+
+router.get("/getgroupitems/:id/:timestamp",function(req,res){
 	client.execute("select * from group where id=?",[req.param('id')],function(err,result){
 		if (err)
 		{
@@ -516,7 +575,7 @@ router.get("/getgroupitems/:id/:timestamp",function(res,req){
 					var reitem={}
 					reitem.cataid=result0.rows[i].cataid
 					reitem.cataname=result0.rows[i].name;
-					reitem.nr=result0.rows[i].nr
+					reitem.nr=result0.rows[i].text
 					reitem.pics=result0.rows[i].pics
 					reitem.type=result0.rows[i].type;
 					reitem.title=result0.rows[i].title;
@@ -540,7 +599,7 @@ router.get("/getgroupitems/:id/:timestamp",function(res,req){
 	})
 })
 
-router.get("/getcataitems/:id/:timestamp",function(res,req){
+router.get("/getcataitems/:id/:timestamp",function(req,res){
 	client.execute("select * from group_item where cataid=? and createtime<? order by createtime desc limit 30",[req.param("id"),parseInt(req.param("timestamp"))],function (err,result0){
 		if (err)
 		{
@@ -554,7 +613,7 @@ router.get("/getcataitems/:id/:timestamp",function(res,req){
 			var reitem={}
 			reitem.cataid=result0.rows[i].cataid
 			reitem.cataname=result0.rows[i].name;
-			reitem.nr=result0.rows[i].nr
+			reitem.nr=result0.rows[i].text
 			reitem.pics=result0.rows[i].pics
 			reitem.type=result0.rows[i].type;
 			reitem.title=result0.rows[i].title;
