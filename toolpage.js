@@ -39,5 +39,22 @@ router.get("/get/:url",function(req,res){
 	});
 })
 
+router.get("/avartar/:md5/:url/:size",function(req,res){
+	var str="http://www.gravatar.com/avatar/"+req.param("md5").toLowerCase()+"?d="+req.param("url")+"&s="+req.param("size");
+	http.get(str, function(resa) {
+		resa.on("data",function(d){
+			res.write(d)
+		})
+		resa.on("end",function(){
+			res.end()
+		})
+		resa.on("error",function(){
+			res.end()
+		})
+	}).on('error', function(e) {
+		console.log("Got error: " + e.message);
+	});
+})
+
 
 exports.router=router;
