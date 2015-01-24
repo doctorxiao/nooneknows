@@ -391,6 +391,14 @@
 					return 
 				}
 				alert("发表成功")
+				var htmlstr=generatehtmlstr(data)
+				if ($("#nrright").height()<$("#nrleft").height())
+				{
+					$("#nrright").prepend(htmlstr)
+				} else
+				{
+					$("#nrleft").prepend(htmlstr)
+				}
 			} else
 			{
 				alert("网络通信故障，请重试")
@@ -474,6 +482,14 @@
 					return 
 				}
 				alert("发表成功")
+				var htmlstr=generatehtmlstr(data)
+				if ($("#nrright").height()<$("#nrleft").height())
+				{
+					$("#nrright").prepend(htmlstr)
+				} else
+				{
+					$("#nrleft").prepend(htmlstr)
+				}
 			} else
 			{
 				alert("网络通信故障，请重试")
@@ -625,6 +641,14 @@
 					return 
 				}
 				alert("发表成功")
+				var htmlstr=generatehtmlstr(data)
+				if ($("#nrright").height()<$("#nrleft").height())
+				{
+					$("#nrright").prepend(htmlstr)
+				} else
+				{
+					$("#nrleft").prepend(htmlstr)
+				}
 			} else
 			{
 				alert("网络通信故障，请重试")
@@ -692,6 +716,14 @@
 					return 
 				}
 				alert("发表成功")
+				var htmlstr=generatehtmlstr(data)
+				if ($("#nrright").height()<$("#nrleft").height())
+				{
+					$("#nrright").prepend(htmlstr)
+				} else
+				{
+					$("#nrleft").prepend(htmlstr)
+				}
 			} else
 			{
 				alert("网络通信故障，请重试")
@@ -954,10 +986,10 @@
 	
 	function getnritem()
 	{
-		var url="/group/getgroupitems/"+groupid+"/"+nrstamp;
+		var url="/group/getgroupitems/"+groupid+"/"+nrstamp+"000";
 		if (pagetype==1)
 		{
-			url="/group/getgroupitems/"+pagecataid+"/"+nrstamp;
+			url="/group/getgroupitems/"+pagecataid+"/"+nrstamp+"000";
 		}
 		$.get(url,function(data,status){
 			if (status=="success")
@@ -974,9 +1006,12 @@
 				}
 				for (var i=0;i<data.length;i++)
 				{
-					if (data[i].createtime<nrstamp)
+					data[i].time=parseInt(data[i].time/1000)
+					alert(nrstamp)
+					alert(data[i].time)
+					if (data[i].time<nrstamp)
 					{
-						nrstamp=data[i].createtime
+						nrstamp=data[i].time
 					}
 					var htmlstr=generatehtmlstr(data[i])
 					if ($("#nrright").height()<$("#nrleft").height())
@@ -987,6 +1022,7 @@
 						$("#nrleft").append(htmlstr)
 					}
 				}
+				$("#midlow").css("display","block")
 			} else
 			{
 				alert("网络通信故障，请重试")
@@ -996,36 +1032,42 @@
 	
 	function generatehtmlstr(a)
 	{
-		var str=""
+		var str='<div id="nr'+a.itemid+'">'
 		
 		if (a.type==1)
 		{
-			str='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+a.createtime+'发表</p><div>'+a.nr+'</div></div>'
+			str+='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+getLocalTime(a.time)+'发表</p><div>'+a.nr+'</div></div>'
 		}
 		if (a.type==2)
 		{
-			str='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+a.createtime+'发表</p><div><a href="'+a.url+'" target="_blank" >'+a.title+'</a></div><div>'+a.nr+'</div></div>'
+			str+='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+getLocalTime(a.time)+'发表</p><div><a href="'+a.url+'" target="_blank" >'+a.title+'</a></div><div>'+a.nr+'</div></div>'
 		}
 		if (a.type==3)
 		{
-			str='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+a.createtime+'发表</p><div><img src="'+a.pics[0]+'" width="100" /></div><div>'+a.nr+'</div></div>'
+			str+='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+getLocalTime(a.time)+'发表</p><div><img src="'+a.pics[0]+'" width="240" /></div><div>'+a.nr+'</div></div>'
 			var inxid=a.cataid+a.createtime
 			nrpics[inxid]=a.pics
 		}
 		if (a.type==4)
 		{
-			str='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+a.createtime+'发表</p><div><ifame src="'+a.url+'" width="100" height="100" /></div><div>'+a.nr+'</div></div>'
+			str+='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+getLocalTime(a.time)+'发表</p><div><iframe src="'+a.url+'" width="240" height="160" /></div><div>'+a.nr+'</div></div>'
 		}
+		str+='<div><input type="button" value="删除" id="sc'+a.itemid+'" /></div>'
 		str+="<div>评论数:"+a.commentnum+"</div>"
 		if (a.lastcommenttime>0)
 		{
-			str+"<div>"+a.lastcommentusername+":"+a.lastcomment+"</div>"
+			str+="<div>"+a.lastcommentusername+":"+a.lastcomment+"</div>"
 		}
+		str+='</div>'
 		return str;
 	}
 	
 	getnritem();
 	
+	
+	function getLocalTime(nS) {     
+       return new Date(parseInt(nS) * 1000).toLocaleString().replace(/年|月/g, "-").replace(/日/g, " ");      
+    }     
 </script>
 
 

@@ -1651,6 +1651,10 @@ router.post("/talksave/:picid",bodyparser.urlencoded({ extended: false }),functi
 		{
 			milisec="0"+milisec;
 		}
+		if (milisec.length==1)
+		{
+			milisec="00"+milisec;
+		}
 		client.execute("insert into pic_talk (nr,picid,talktime,userid,username,userphoto) values (?,?,?,?,?,?)",[req.body.talknr,req.param('picid'),cql.types.Long.fromString((Date.parse(dt)/1000).toString()+milisec),req.session.uuid,result.rows[0].username,result.rows[0].photo],function(err,result1){
 			if (err)
 			{
