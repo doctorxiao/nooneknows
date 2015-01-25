@@ -1007,8 +1007,6 @@
 				for (var i=0;i<data.length;i++)
 				{
 					data[i].time=parseInt(data[i].time/1000)
-					alert(nrstamp)
-					alert(data[i].time)
 					if (data[i].time<nrstamp)
 					{
 						nrstamp=data[i].time
@@ -1052,12 +1050,15 @@
 		{
 			str+='<div style="margin-top:20px;border-style:solid;border-width:1px 1px 1px 1px;"><p>'+a.username+'</p><p>于'+getLocalTime(a.time)+'发表</p><div><iframe src="'+a.url+'" width="240" height="160" /></div><div>'+a.nr+'</div></div>'
 		}
-		str+='<div><input type="button" value="删除" id="sc'+a.itemid+'" /></div>'
-		str+="<div>评论数:"+a.commentnum+"</div>"
-		if (a.lastcommenttime>0)
+		str+='<div><input type="button" value="删除" id="sc'+a.itemid+'" onclick="delitem(\''+a.itemid+'\')" /></div>'
+		str+="<div>评论数:"+a.commentnum+"<input type=\"button\" value=\"更多评论\" onclick=\"morepl('"+a.itemid+"')\"</div>"
+		str+='<div id="pl'+a.itemid+'">'
+		if (a.lastcommenttimestr>0)
 		{
 			str+="<div>"+a.lastcommentusername+":"+a.lastcomment+"</div>"
 		}
+		str+="</div>"
+		str+='<div>评论：<input type="text" value="" id="mypl'+a.itemid+'" /><input type="button" value="提交" onclick="plok(\''+a.itemid+'\')"></div>'
 		str+='</div>'
 		return str;
 	}
@@ -1067,7 +1068,90 @@
 	
 	function getLocalTime(nS) {     
        return new Date(parseInt(nS) * 1000).toLocaleString().replace(/年|月/g, "-").replace(/日/g, " ");      
-    }     
+    }  
+	
+	function delitem(a)
+	{
+		$.get("/group/delitem/"+a,function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能操作")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				$("#nr"+a).remove()
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	}
+	
+	
+	function plok(a)
+	{
+		var nr=$("#mypl"+a).val()
+		nr=nr.replace(/(^\s*)|(\s*$)/g,"")
+		if (nr.length<1)
+		{
+			alert("评论内容不能为空")
+		}
+		if (nr.length>2000)
+		{
+			alert("评论内容过长")
+		}
+		$.post("/group/itemtalk/"+a,{nr:nr},function(data,status){
+			if (status=="success")
+			{
+				if (typeof(data)=="string" && data.substr(0,8)=="internal")
+				{
+					alert("内部错误，请重试")
+					return 
+				}
+				if (data=="not logined")
+				{
+					alert("未登录，不能操作")
+					return 
+				}
+				if (data=="param error")
+				{
+					alert("参数错误")
+					return
+				}
+				if (data=="not permision")
+				{
+					alert("权限不足")
+					return 
+				}
+				if (data=="nr too long")
+				{
+					alert("内容过长")
+					return 
+				}
+				$("#pl"+a).prepend("我："+nr)
+			} else
+			{
+				alert("网络通信故障，请重试")
+			}
+		})
+	}
+	
 </script>
 
 

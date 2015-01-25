@@ -571,6 +571,8 @@ router.get("/getgroupitems/:id/:timestamp",function(req,res){
 				reitem.usertype=result0.rows[i].usertype
 				reitem.lastcomment=result0.rows[i].lastcomment
 				reitem.lastcommenttime=result0.rows[i].lastcommenttime
+				if (reitem.lastcommenttime!=null) {
+				reitem.lastcommenttimestr=reitem.lastcommenttime.toString()}
 				reitem.lastcommentuserid=result0.rows[i].lastcommentuserid
 				reitem.lastcommentusername=result0.rows[i].lastcommentusername
 				reitem.lastcommentuserphoto=result0.rows[i].lastcommentuserphoto
@@ -720,7 +722,7 @@ router.post("/itemtalk/:id",bodyparser.urlencoded({ extended: false }),function(
 						milisec="00"+milisec;
 					}
 					var timestr=cql.types.Long.fromString((Date.parse(dt)/1000).toString()+milisec)
-					client.execute("insert into group_talk (item_id,createtime,nr,userid,username,userphoto) values (?,?,?,?,?,?)",[req.param("id"),timestr,req.body.nr.replace(/(^\s*)|(\s*$)/g,""),req.session.uuid,result0.rows[0].username,result0.rows[0].photo],function(err,result3){
+					client.execute("insert into group_talk (item_id,createtime,nr,userid,username,userphoto,talkid) values (?,?,?,?,?,?,?)",[req.param("id"),timestr,req.body.nr.replace(/(^\s*)|(\s*$)/g,""),req.session.uuid,result0.rows[0].username,result0.rows[0].photo,uuid.v4()],function(err,result3){
 						if (err)
 						{
 							res.send("internal err3")
@@ -735,8 +737,13 @@ router.post("/itemtalk/:id",bodyparser.urlencoded({ extended: false }),function(
 						retosend.username=result0.rows[0].username
 						retosend.userphoto=result0.rows[0].photo
 						res.send(retosend)
+						client.execute("update group_item set lastcomment=?,lastcommenttime=?,lastcommentuserid=?,lastcommentusername=?,lastcommentuserphoto=?,commentnum=? where cataid=? and createtime=?",[req.body.nr.replace(/(^\s*)|(\s*$)/g,""),timestr,req.session.uuid,result0.rows[0].username,result0.rows[0].photo,result.rows[0].commentnum+1,result.rows[0].cataid,result.rows[0].createtime],function(err,result4){
+							if (err) {console.error(err)}
+						})
+						client.execute("update group_group_item set lastcomment=?,lastcommenttime=?,lastcommentuserid=?,lastcommentusername=?,lastcommentuserphoto=?,commentnum=? where groupid=? and createtime=?",[req.body.nr.replace(/(^\s*)|(\s*$)/g,""),timestr,req.session.uuid,result0.rows[0].username,result0.rows[0].photo,result.rows[0].commentnum+1,result.rows[0].groupid,result.rows[0].createtime],function(err,result5){
+							if (err) {console.error(err)}
+						})
 					})
-					res.send("ok")
 				} else
 				{
 					res.send("not permision")
