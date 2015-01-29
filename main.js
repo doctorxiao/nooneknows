@@ -11,9 +11,13 @@ var config=require("./config.js").config;
 var cql = require('node-cassandra-cql');
 var client = new cql.Client(config.cassandra);
 var path=require('path');
+var ejs=require("ejs")
+
 var serveStatic = require('serve-static')
 var app = express();
-
+app.set('views', __dirname + '/views');
+app.engine('html', ejs.__express);
+app.set('view engine','html');
 var options = {
   dotfiles: 'ignore',
   etag: false,
@@ -77,5 +81,13 @@ app.get('/cassandra',function(req, res){
 
 
 app.get('/',function(req,res){
-	res.send('under construction<p><a href="http://www.itsounds.cool/login">登录功能</a></p><p><a href="http://www.itsounds.cool/picbed/upload">图床功能</a></p><p><a href="http://www.itsounds.cool/cassandra">数据表结构</a></p>');
+	app.render("index",{title:" 首页(It Sounds Cool)"},function(err,html){
+		if (err)
+		{
+			console.error(err)
+			res.send("发生了一些错误")
+			return
+		}
+		res.send(html)
+	})
 })
